@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import AvatarModel, { preloadAvatar } from "./avatar-model";
+
+const AVATAR_URL = "/models/standing-greeting.glb";
+
+// Start downloading the model as soon as this (already idle-deferred) chunk
+// loads, so the character is usually ready by the time the canvas paints.
+if (typeof window !== "undefined") preloadAvatar(AVATAR_URL);
 
 // ---------------------------------------------------------------------------
 // Particle positions are generated off the main thread in a Web Worker so the
@@ -105,29 +112,24 @@ function SparkleDust({ color, count }) {
   );
 }
 
-/** Hand-rolled float (replaces drei's <Float/>): gentle bob + sway. */
-function FloatingKnot({ color, animated }) {
-  const group = useRef(null);
-  const mesh = useRef(null);
-
-  useFrame((state, delta) => {
-    if (!group.current || !mesh.current) return;
-    const t = state.clock.elapsedTime;
-    group.current.position.y = Math.sin(t * 0.8) * 0.25;
-    group.current.rotation.z = Math.sin(t * 0.5) * 0.06;
-    if (animated) {
-      mesh.current.rotation.x += delta * 0.12;
-      mesh.current.rotation.y += delta * 0.18;
-    }
-  });
-
+/** Sizes and grounds the greeting character responsively from the viewport. */
+function HeroAvatar({ animated, small }) {
+  const viewport = useThree((s) => s.viewport);
+  // Desktop: a large grounded figure on the right. Mobile: fully visible in
+  // its own band at the bottom of the hero (the copy reserves that space via
+  // padding), never wider than the screen.
+  const height = small
+    ? Math.min(viewport.height * 0.3, viewport.width * 1.1)
+    : Math.min(4.6, viewport.height * 0.8);
+  // Feet slightly above the bottom edge of the canvas.
+  const y = -viewport.height / 2 + height / 2 + (small ? 0.38 : 0.15);
   return (
-    <group ref={group}>
-      <mesh ref={mesh} scale={1.15}>
-        <torusKnotGeometry args={[1, 0.3, 160, 18]} />
-        <meshBasicMaterial color={color} wireframe transparent opacity={0.28} />
-      </mesh>
-    </group>
+    <AvatarModel
+      url={AVATAR_URL}
+      height={height}
+      position={[0, y, 0]}
+      animated={animated}
+    />
   );
 }
 
@@ -170,9 +172,18 @@ export default function HeroCanvas({
       frameloop={frameloop}
       style={{ background: "transparent" }}
     >
+      {/* Cheap four-light studio setup for the PBR character; no shadows.
+          The front fill is what keeps the face out of shadow. */}
+      <hemisphereLight intensity={1.6} color="#ffffff" groundColor="#5c5288" />
+      <directionalLight position={[2.5, 3, 4]} intensity={2.8} />
+      <directionalLight position={[0, 0.5, 6]} intensity={1.3} color="#fff4e6" />
+      <directionalLight position={[-3, 1.5, -2.5]} intensity={1.1} color={secondary} />
+
       <PointerRig>
         <ParticleSphere color={primary} count={small ? 1200 : 2600} />
-        <FloatingKnot color={secondary} animated={!reducedMotion} />
+        <Suspense fallback={null}>
+          <HeroAvatar animated={!reducedMotion} small={small} />
+        </Suspense>
         <SparkleDust color={primary} count={small ? 60 : 110} />
       </PointerRig>
     </Canvas>

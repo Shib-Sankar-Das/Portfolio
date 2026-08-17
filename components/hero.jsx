@@ -102,7 +102,7 @@ export default function Hero({
 
       {/* Layer 1: 3D canvas (slow parallax) */}
       <m.div style={{ y: canvasY }} className="absolute inset-0" aria-hidden>
-        <div className="absolute inset-0 lg:left-[30%]">
+        <div className="absolute inset-0 md:left-[30%]">
           {mountCanvas && (
             <HeroCanvas
               primary={canvasColors?.primary}
@@ -116,7 +116,9 @@ export default function Hero({
       {/* Layer 2: content (fast parallax) */}
       <m.div
         style={{ y: contentY, opacity: fade }}
-        className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-24 pb-16 sm:px-6"
+        // On phones the bottom ~40svh belongs to the 3D character, so the
+        // copy pads down to keep out of its way; from md up they share width.
+        className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-24 pb-[42svh] sm:px-6 md:pb-16"
       >
         <m.p
           initial={{ opacity: 0, y: 18 }}
