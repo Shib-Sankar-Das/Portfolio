@@ -11,6 +11,7 @@ import ThemeToggle from "./theme-toggle";
 const links = [
   { href: "/", label: "Home" },
   ...domains.map((d) => ({ href: `/${d.slug}`, label: d.shortTitle })),
+  { href: "/certificates", label: "Certificates" },
 ];
 
 export default function Navbar() {

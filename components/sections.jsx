@@ -349,11 +349,9 @@ export function EducationCerts({ certifications }) {
           <SectionHeadingLeft eyebrow="Certifications" title="Credentials" />
           <StaggerGroup className="space-y-4">
             {certifications.map((c) => (
-              <StaggerItem key={c.name}>
-                <a
-                  href={c.link}
-                  target="_blank"
-                  rel="noreferrer"
+              <StaggerItem key={c.slug ?? c.name}>
+                <Link
+                  href={`/certificates/${c.slug}`}
                   className="card-hover group flex items-start gap-4 rounded-2xl border border-line bg-card p-5"
                 >
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
@@ -365,14 +363,25 @@ export function EducationCerts({ certifications }) {
                       {c.org} · {c.date}
                     </p>
                   </div>
-                  <ExternalLink
-                    size={14}
-                    className="mt-1 shrink-0 text-muted transition-colors group-hover:text-accent"
+                  <ArrowRight
+                    size={15}
+                    className="mt-1 shrink-0 text-muted transition-all group-hover:translate-x-1 group-hover:text-accent"
                   />
-                </a>
+                </Link>
               </StaggerItem>
             ))}
           </StaggerGroup>
+
+          <Reveal delay={0.15}>
+            <Link
+              href="/certificates"
+              className="group mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+            >
+              <Award size={15} className="text-accent" />
+              Other Certificates
+              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Reveal>
         </div>
       </div>
     </SectionShell>

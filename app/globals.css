@@ -180,6 +180,110 @@ body {
     inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
 }
 
+/* ---------------- Certificate gallery: wall + picture frames ------------- */
+
+/* Gallery wall surface: faint plaster texture with a lit patch up top. */
+.cert-wall {
+  background-color: var(--bg-soft);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 50% -10%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    repeating-linear-gradient(92deg, color-mix(in srgb, var(--fg) 2%, transparent) 0 2px, transparent 2px 5px),
+    repeating-linear-gradient(2deg, color-mix(in srgb, var(--fg) 2%, transparent) 0 2px, transparent 2px 6px);
+}
+
+/* Picture frame: molding + bevel, built entirely from gradients and shadows. */
+.cert-frame {
+  background: linear-gradient(148deg, #d9cfbe 0%, #f3ece0 22%, #c9bda7 55%, #efe7d8 78%, #cabfa9 100%);
+  padding: clamp(0.5rem, 1.4vw, 0.85rem);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.09),
+    0 2px 4px rgba(2, 6, 23, 0.16),
+    0 14px 28px -12px rgba(2, 6, 23, 0.42),
+    0 30px 60px -28px rgba(2, 6, 23, 0.5);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease;
+}
+.dark .cert-frame {
+  background: linear-gradient(148deg, #2b3040 0%, #434a60 24%, #1e2231 56%, #3c4358 80%, #232838 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 16px 30px -12px rgba(0, 0, 0, 0.72),
+    0 34px 66px -30px rgba(0, 0, 0, 0.8);
+}
+
+/* Mat board (passe-partout) with a bevelled window edge. */
+.cert-mat {
+  background: #f7f4ec;
+  padding: clamp(0.45rem, 1.5vw, 1rem);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.07),
+    inset 0 1px 3px rgba(0, 0, 0, 0.09);
+}
+.dark .cert-mat {
+  background: #12161f;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* Glazing: the diagonal sheen of glass over the artwork. */
+.cert-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.07) 26%, transparent 46%, rgba(255, 255, 255, 0.05) 72%, rgba(255, 255, 255, 0.14) 100%);
+  opacity: 0.75;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.dark .cert-glass::after {
+  background: linear-gradient(114deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 28%, transparent 48%, rgba(255, 255, 255, 0.03) 74%, rgba(255, 255, 255, 0.08) 100%);
+}
+.group:hover .cert-glass::after {
+  opacity: 1;
+  transform: translateX(6%);
+}
+
+/* Museum picture-light wash that switches on when a frame is hovered. */
+.cert-picture-light {
+  background: radial-gradient(ellipse 68% 46% at 50% 0%, color-mix(in srgb, var(--accent) 42%, white) 0%, transparent 72%);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.group:hover .cert-picture-light {
+  opacity: 0.5;
+}
+
+.cert-frame-hover:hover .cert-frame {
+  transform: translateY(-10px) scale(1.015);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(2, 6, 23, 0.2),
+    0 26px 46px -14px rgba(2, 6, 23, 0.45),
+    0 46px 90px -30px var(--glow);
+}
+
+/* Engraved plaque under each frame. */
+.cert-plaque {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--fg) 7%, var(--card)), var(--card));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 30%, transparent), 0 2px 6px -2px rgba(2, 6, 23, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cert-frame,
+  .cert-glass::after,
+  .cert-picture-light {
+    transition: none;
+  }
+  .cert-frame-hover:hover .cert-frame {
+    transform: none;
+  }
+}
+
 /* Skip rendering work for off-screen sections (virtualization-style win,
    no JS). The intrinsic size keeps the scrollbar stable. */
 .cv-auto {
