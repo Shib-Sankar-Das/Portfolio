@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { m } from "framer-motion";
 import {
   ArrowRight,
   Award,
@@ -15,6 +16,7 @@ import {
   Phone,
 } from "lucide-react";
 import { Github, Linkedin } from "./brand-icons";
+import ProfilePhoto from "./profile-photo";
 import { education, experience, profile } from "@/lib/data";
 import { Parallax, Reveal, StaggerGroup, StaggerItem } from "./motion";
 
@@ -52,12 +54,7 @@ export function About({ summary, highlights }) {
       <Parallax speed={30} className="glow-blob right-[-6%] top-0 h-64 w-64" />
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
         <Reveal>
-          <div className="relative mx-auto flex h-56 w-56 items-center justify-center sm:h-64 sm:w-64">
-            <div className="absolute inset-0 animate-float-slow rounded-[2.5rem] bg-gradient-to-br from-accent to-accent-2 opacity-20 blur-2xl" />
-            <div className="relative flex h-full w-full items-center justify-center rounded-[2.5rem] border border-line bg-card text-6xl font-bold shadow-xl">
-              <span className="text-gradient">{profile.initials}</span>
-            </div>
-          </div>
+          <ProfilePhoto />
         </Reveal>
         <div>
           <SectionHeadingLeft eyebrow="About Me" title="Building intelligence, end to end" />
@@ -190,9 +187,47 @@ export function Experience() {
         title="Where I've Worked"
         description="Internships across AI, data science and research — shipping real systems, not toy demos."
       />
-      <div className="relative mx-auto max-w-3xl">
+      {/* From xl up the timeline shifts left of center to make room for the
+          larger leaning character on its right. Below xl the timeline
+          reserves headroom (pt-52) for the table character instead. */}
+      <div className="relative mx-auto max-w-3xl pt-64 xl:mx-0 xl:ml-24 xl:pt-0">
+        {/* Mobile/tablet: the character rests his hands on the top border of
+            the first experience card (the card edge plays the table). His
+            image bottom (the hands) sits exactly at the reserved headroom's
+            end, where the first card begins. */}
         <div
-          className="absolute bottom-2 left-[11px] top-2 w-px bg-gradient-to-b from-accent via-accent-2 to-transparent sm:left-[13px]"
+          className="pointer-events-none absolute inset-x-0 top-0 flex justify-center xl:hidden"
+          aria-hidden
+        >
+          <m.img
+            src="/anim/character-table-hi.webp"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.7, ease: [0.21, 0.65, 0.32, 0.95] }}
+            className="h-64 w-auto select-none drop-shadow-xl motion-reduce:hidden"
+          />
+        </div>
+        {/* Animated character leaning against the timeline's right edge
+            (the cards play the role of the wall in his animation). Only
+            shown from xl up, where the section's side margin fits him. */}
+        <m.img
+          src="/anim/character-hi.webp"
+          alt=""
+          aria-hidden
+          loading="lazy"
+          decoding="async"
+          initial={{ opacity: 0, x: 56 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.8, ease: [0.21, 0.65, 0.32, 0.95] }}
+          className="pointer-events-none absolute bottom-0 z-10 hidden w-72 select-none drop-shadow-2xl motion-reduce:hidden xl:-right-56 xl:block"
+        />
+        <div
+          className="absolute bottom-2 left-[11px] top-64 w-px bg-gradient-to-b from-accent via-accent-2 to-transparent sm:left-[13px] xl:top-2"
           aria-hidden
         />
         <div className="space-y-10">
