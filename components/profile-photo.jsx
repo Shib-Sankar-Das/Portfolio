@@ -19,24 +19,27 @@ const CUTOUT = `/images/profile-cutout.png${IMG_VERSION}`;
 
 /**
  * About-section portrait with a pop-out effect, layered back-to-front:
- * 1. accent glow — theme-colored radial wash behind the card (the original
- *    photo background is never shown, only the cutout subject);
- * 2. .about-photo-frame — glass slab (backdrop-filter) with layered shadows,
- *    recessed in 3D space;
+ * 1. accent glow — theme-colored radial wash behind the card;
+ * 2. .about-photo-frame — glass slab (backdrop-filter) with layered shadows;
  * 3. .about-photo-subject — alpha-matted cutout (public/images/profile-cutout.png,
- *    generated with rembg) raised toward the viewer, head overlapping the frame.
- * The stack tilts toward the pointer (perspective + preserve-3d), so the
- * subject visibly parallaxes over the recessed frame.
+ *    generated with rembg), head overlapping the frame.
+ * The pointer is tracked on the whole area, but ONLY the glow + frame group
+ * tilts and scales toward it — the subject stays perfectly still, so the box
+ * appears to swivel behind a steady portrait.
  */
 export default function ProfilePhoto() {
   const ref = useRef(null);
   const rotateX = useSpring(useMotionValue(REST_X), SPRING);
   const rotateY = useSpring(useMotionValue(REST_Y), SPRING);
+  const scale = useSpring(useMotionValue(1), { stiffness: 220, damping: 20 });
+
+  function reducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
 
   function handleMove(e) {
     const node = ref.current;
-    if (!node) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!node || reducedMotion()) return;
     const rect = node.getBoundingClientRect();
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
@@ -44,44 +47,48 @@ export default function ProfilePhoto() {
     rotateX.set(REST_X - py * 16);
   }
 
+  function handleEnter() {
+    if (reducedMotion()) return;
+    scale.set(1.04);
+  }
+
   function handleLeave() {
     rotateX.set(REST_X);
     rotateY.set(REST_Y);
+    scale.set(1);
   }
 
   return (
     <div
+      ref={ref}
+      onPointerMove={handleMove}
+      onPointerEnter={handleEnter}
+      onPointerLeave={handleLeave}
       className="mx-auto w-full max-w-[270px] sm:max-w-[320px] lg:max-w-[360px]"
       style={{ perspective: "1100px" }}
     >
-      <m.div
-        ref={ref}
-        onPointerMove={handleMove}
-        onPointerLeave={handleLeave}
-        whileHover={{ scale: 1.03 }}
-        transition={{ type: "spring", stiffness: 220, damping: 20 }}
-        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        className="relative aspect-[4/5]"
-      >
-        {/* Accent glow behind the card (theme-colored, no photo background) */}
-        <div
-          className="absolute inset-0 -z-10 rounded-[3rem]"
-          style={{ background: "radial-gradient(circle at 50% 45%, var(--glow), transparent 72%)", filter: "blur(30px)", transform: "scale(1.15)" }}
+      <div className="relative aspect-[4/5]">
+        {/* Interactive box: glow + glass frame tilt toward the pointer */}
+        <m.div
+          style={{ rotateX, rotateY, scale, transformStyle: "preserve-3d" }}
+          className="absolute inset-0"
           aria-hidden
-        />
-
-        {/* Glass slab behind the subject (recessed in 3D space) */}
-        <div
-          className="about-photo-frame absolute inset-x-0 bottom-0 top-[22%] rounded-[2rem] border border-line"
-          style={{ transform: "translateZ(-40px)" }}
-          aria-hidden
-        />
-
-        {/* Alpha-matted subject — pops out over the frame */}
-        <div
-          className="about-photo-subject absolute inset-0"
-          style={{ transform: "translateZ(30px)" }}
         >
+          {/* Accent glow behind the card (theme-colored) */}
+          <div
+            className="absolute inset-0 -z-10 rounded-[3rem]"
+            style={{ background: "radial-gradient(circle at 50% 45%, var(--glow), transparent 72%)", filter: "blur(30px)", transform: "scale(1.15)" }}
+          />
+
+          {/* Glass slab with layered shadows (recessed in 3D space) */}
+          <div
+            className="about-photo-frame absolute inset-x-0 bottom-0 top-[22%] rounded-[2rem] border border-line"
+            style={{ transform: "translateZ(-40px)" }}
+          />
+        </m.div>
+
+        {/* Alpha-matted subject — static, never affected by the tilt */}
+        <div className="about-photo-subject absolute inset-0">
           <Image
             src={CUTOUT}
             alt={`Portrait of ${profile.name}`}
@@ -90,7 +97,7 @@ export default function ProfilePhoto() {
             className="object-cover object-top"
           />
         </div>
-      </m.div>
+      </div>
     </div>
   );
 }
