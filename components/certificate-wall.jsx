@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Building2,
   CalendarDays,
+  Layers,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -63,15 +64,32 @@ function FramedCertificate({ cert, index }) {
         {/* Picture light above the frame */}
         <div className="cert-picture-light pointer-events-none h-8 w-full" aria-hidden />
 
-        <div className="cert-frame">
-          <div className="cert-mat">
-            <div
-              className="cert-glass relative aspect-[4/3] overflow-hidden"
-              style={{ containerType: "inline-size" }}
-            >
-              <CertificateArtwork cert={cert} priority={index < 3} />
+        <div className="relative">
+          {/* Bundles hang as a stack, so the extra documents read at a glance. */}
+          {cert.isBundle && (
+            <>
+              <div className="cert-stack-layer cert-stack-layer-1" aria-hidden />
+              <div className="cert-stack-layer cert-stack-layer-2" aria-hidden />
+            </>
+          )}
+
+          <div className="cert-frame relative">
+            <div className="cert-mat">
+              <div
+                className="cert-glass relative aspect-[4/3] overflow-hidden"
+                style={{ containerType: "inline-size" }}
+              >
+                <CertificateArtwork cert={cert} priority={index < 3} />
+              </div>
             </div>
           </div>
+
+          {cert.isBundle && (
+            <span className="cert-stack-badge absolute -right-2 -top-2 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold text-white">
+              <Layers size={11} />
+              {cert.items.length}
+            </span>
+          )}
         </div>
 
         {/* Engraved museum plaque */}
@@ -82,8 +100,13 @@ function FramedCertificate({ cert, index }) {
           <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted">
             {cert.org} · {cert.date}
           </p>
+          {cert.isBundle && (
+            <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-accent">
+              <Layers size={11} /> {cert.items.length} documents in this credential
+            </p>
+          )}
           <span className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-semibold text-accent opacity-0 transition-opacity group-hover:opacity-100">
-            View certificate <ArrowUpRight size={12} />
+            {cert.isBundle ? "View all documents" : "View certificate"} <ArrowUpRight size={12} />
           </span>
         </div>
       </Link>

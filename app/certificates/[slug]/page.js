@@ -10,12 +10,14 @@ import {
   Globe,
   Hash,
   Infinity as InfinityIcon,
+  Layers,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CertificateShowcase from "@/components/certificate-showcase";
+import CertificateDocuments from "@/components/certificate-documents";
 import { StatusBadge } from "@/components/certificate-frame";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion";
 import {
@@ -102,6 +104,11 @@ export default async function CertificateDetailPage({ params }) {
                     {cert.kind}
                   </span>
                   <StatusBadge cert={cert} />
+                  {cert.isBundle && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1.5 text-xs font-semibold text-accent">
+                      <Layers size={12} /> {cert.items.length} documents
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="mt-5 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
@@ -194,6 +201,9 @@ export default async function CertificateDetailPage({ params }) {
                   ))}
                 </ul>
               </Reveal>
+
+              {/* Bundled documents */}
+              {cert.isBundle && <CertificateDocuments items={cert.items} />}
 
               {/* Skills */}
               <Reveal delay={0.16} className="mt-9">

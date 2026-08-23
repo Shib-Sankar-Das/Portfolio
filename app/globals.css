@@ -267,6 +267,47 @@ body {
     0 46px 90px -30px var(--glow);
 }
 
+/* A bundle (one programme, several documents) hangs as a stack: two thin
+   frames peek out behind the front one. */
+.cert-stack-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(148deg, #d9cfbe 0%, #f0e8da 45%, #c2b6a0 100%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 18px -8px rgba(2, 6, 23, 0.55);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dark .cert-stack-layer {
+  background: linear-gradient(148deg, #414963 0%, #2c3245 45%, #38405a 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.8);
+}
+.cert-stack-layer-1 {
+  transform: translate(16px, 14px) rotate(2.2deg);
+}
+.cert-stack-layer-2 {
+  transform: translate(8px, 7px) rotate(-1.5deg);
+}
+.cert-frame-hover:hover .cert-stack-layer-1 {
+  transform: translate(26px, 22px) rotate(3.6deg);
+}
+.cert-frame-hover:hover .cert-stack-layer-2 {
+  transform: translate(13px, 11px) rotate(-2.4deg);
+}
+
+/* Count badge on a stacked frame. */
+.cert-stack-badge {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 6px 16px -6px var(--glow), 0 0 0 3px var(--bg-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cert-stack-layer { transition: none; }
+  .cert-frame-hover:hover .cert-stack-layer-1,
+  .cert-frame-hover:hover .cert-stack-layer-2 { transform: translate(10px, 10px) rotate(1.4deg); }
+}
+
 /* Engraved plaque under each frame. */
 .cert-plaque {
   background: linear-gradient(160deg, color-mix(in srgb, var(--fg) 7%, var(--card)), var(--card));

@@ -81,6 +81,16 @@ The database is created and seeded from [lib/seed-certificates.js](lib/seed-cert
 on first run, so a fresh checkout renders even before the admin app has been
 started. It lives outside both projects and is not tracked in git.
 
+### Bundled certificates
+
+A credential that awarded several documents (rows in `certificate_items`) is
+rendered differently: on the wall it hangs as a **stacked frame** with a
+document-count badge, and its detail page gains a document browser
+([components/certificate-documents.jsx](components/certificate-documents.jsx))
+listing each document with its own note and a link to the original file. The
+flag is `cert.isBundle`, set whenever a certificate has more than one document.
+Bundles are created and edited in the admin app.
+
 ### How admin edits reach this app
 
 After a save the admin app posts to `POST /api/revalidate`
