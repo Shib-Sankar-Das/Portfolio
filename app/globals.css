@@ -283,17 +283,25 @@ body {
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.8);
 }
+/* The stack fans up and sideways, never downward, so it can't cover the
+   plaque carrying the certificate name. */
 .cert-stack-layer-1 {
-  transform: translate(16px, 14px) rotate(2.2deg);
+  transform: translate(16px, -12px) rotate(2.2deg);
 }
 .cert-stack-layer-2 {
-  transform: translate(8px, 7px) rotate(-1.5deg);
+  transform: translate(8px, -6px) rotate(-1.5deg);
 }
 .cert-frame-hover:hover .cert-stack-layer-1 {
-  transform: translate(26px, 22px) rotate(3.6deg);
+  transform: translate(26px, -20px) rotate(3.6deg);
 }
 .cert-frame-hover:hover .cert-stack-layer-2 {
-  transform: translate(13px, 11px) rotate(-2.4deg);
+  transform: translate(13px, -10px) rotate(-2.4deg);
+}
+
+/* The plaque always sits above the fanned-out frames. */
+.cert-plaque {
+  position: relative;
+  z-index: 3;
 }
 
 /* Count badge on a stacked frame. */

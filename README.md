@@ -81,6 +81,20 @@ The database is created and seeded from [lib/seed-certificates.js](lib/seed-cert
 on first run, so a fresh checkout renders even before the admin app has been
 started. It lives outside both projects and is not tracked in git.
 
+### How documents are served
+
+Certificate documents live on Cloudinary under **authenticated delivery** — a
+direct URL returns 401. This app signs read URLs server-side in
+[lib/media.js](lib/media.js) and streams *rendered page images* through
+[app/api/certificate-media](app/api/certificate-media), which only serves
+documents belonging to a published certificate. The browser therefore never
+receives a Cloudinary URL and the source PDF is never delivered; readers open
+documents in [components/document-viewer.jsx](components/document-viewer.jsx),
+an in-page viewer with zoom, panning and page navigation.
+
+This is why the portfolio needs read-only `CLOUDINARY_*` credentials: to sign,
+never to upload.
+
 ### Bundled certificates
 
 A credential that awarded several documents (rows in `certificate_items`) is

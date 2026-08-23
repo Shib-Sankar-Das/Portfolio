@@ -2,17 +2,24 @@
 
 import { useState } from "react";
 import { m } from "framer-motion";
-import { ExternalLink, FileText, Layers } from "lucide-react";
+import { Expand, FileText, Layers, ShieldCheck } from "lucide-react";
 import { Reveal } from "./motion";
+import { useBundle } from "./bundle-context";
+import DocumentViewer from "./document-viewer";
 
 /**
- * The documents that make up a bundled credential. One programme can award
- * several — a completion certificate, a signed certificate, an acknowledgement
- * letter — each with its own significance. Selecting a document swaps the large
- * preview; every document keeps a direct link to the original file.
+ * The documents that make up a bundled credential, each with the significance
+ * of that particular document. Selecting one drives the showcase frame on the
+ * left as well (shared through BundleProvider). Documents open in the in-page
+ * viewer — there is no link to the underlying file.
  */
-export default function CertificateDocuments({ items }) {
-  const [active, setActive] = useState(0);
+export default function CertificateDocuments() {
+  const bundle = useBundle();
+  const [viewerFor, setViewerFor] = useState(null);
+
+  if (!bundle?.isBundle) return null;
+
+  const { items, active, setActive } = bundle;
   const current = items[active];
 
   return (
@@ -21,11 +28,10 @@ export default function CertificateDocuments({ items }) {
         <Layers size={14} /> {items.length} documents in this credential
       </h2>
       <p className="mb-5 text-sm text-muted">
-        This programme awarded more than one document. Each is listed below with what
-        it certifies.
+        This programme awarded more than one document. Pick any to preview it in the
+        frame alongside, or open it full size in the viewer.
       </p>
 
-      {/* Selector */}
       <div className="mb-5 flex flex-wrap gap-2">
         {items.map((item, i) => (
           <button
@@ -45,50 +51,42 @@ export default function CertificateDocuments({ items }) {
         ))}
       </div>
 
-      {/* Active document */}
+      {/* Details of the selected document */}
       <m.div
         key={current.id}
-        initial={{ opacity: 0, y: 14 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.21, 0.65, 0.32, 0.95] }}
-        className="overflow-hidden rounded-2xl border border-line bg-card"
+        transition={{ duration: 0.32, ease: [0.21, 0.65, 0.32, 0.95] }}
+        className="rounded-2xl border border-line bg-card p-6"
       >
-        {current.image && (
-          <div className="cert-mat border-b border-line">
-            <div className="cert-glass relative aspect-[4/3] overflow-hidden rounded-sm">
-              {/* Cloudinary-hosted; sized by the container. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={current.image}
-                alt={current.title}
-                className="h-full w-full object-contain"
-                loading="lazy"
-              />
-            </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+              Document {active + 1} of {items.length}
+            </p>
+            <h3 className="mt-1 text-lg font-bold leading-snug">{current.title}</h3>
           </div>
-        )}
-
-        <div className="p-6">
-          <h3 className="text-lg font-bold leading-snug">{current.title}</h3>
-          {current.note && (
-            <p className="mt-2.5 text-sm leading-relaxed text-muted">{current.note}</p>
-          )}
-          {current.assetUrl && (
-            <a
-              href={current.assetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-xs font-semibold transition-colors hover:border-accent hover:text-accent"
+          {current.image && (
+            <button
+              type="button"
+              onClick={() => setViewerFor(current)}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-2 px-4 py-2 text-xs font-semibold text-white shadow-md transition-transform hover:scale-[1.04]"
             >
-              <FileText size={13} />
-              Open {current.assetFormat?.toUpperCase() || "document"}
-              <ExternalLink size={12} className="opacity-60" />
-            </a>
+              <Expand size={13} /> Open viewer
+            </button>
           )}
         </div>
+
+        {current.note && (
+          <p className="mt-3 text-sm leading-relaxed text-muted">{current.note}</p>
+        )}
+
+        {current.pageCount > 1 && (
+          <p className="mt-3 text-xs text-muted">{current.pageCount} pages</p>
+        )}
       </m.div>
 
-      {/* Everything at a glance */}
+      {/* All documents at a glance */}
       <ol className="mt-5 space-y-2.5">
         {items.map((item, i) => (
           <li key={item.id}>
@@ -112,6 +110,22 @@ export default function CertificateDocuments({ items }) {
           </li>
         ))}
       </ol>
+
+      <p className="mt-4 flex items-center gap-1.5 text-[11px] text-muted">
+        <ShieldCheck size={12} className="text-accent" />
+        Documents are stored privately and shown as rendered pages — the source files
+        are not published.
+      </p>
+
+      {viewerFor && (
+        <DocumentViewer
+          open
+          onClose={() => setViewerFor(null)}
+          title={viewerFor.title}
+          mediaSrc={viewerFor.image}
+          pageCount={viewerFor.pageCount ?? 1}
+        />
+      )}
     </Reveal>
   );
 }

@@ -18,6 +18,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import CertificateShowcase from "@/components/certificate-showcase";
 import CertificateDocuments from "@/components/certificate-documents";
+import { BundleProvider } from "@/components/bundle-context";
 import { StatusBadge } from "@/components/certificate-frame";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion";
 import {
@@ -78,6 +79,8 @@ export default async function CertificateDetailPage({ params }) {
             </Link>
           </Reveal>
 
+          {/* Shares the selected document between the frame and the browser. */}
+          <BundleProvider items={cert.items}>
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
             {/* ------------------------- The frame ------------------------- */}
             <Reveal className="lg:sticky lg:top-28 lg:self-start">
@@ -203,7 +206,7 @@ export default async function CertificateDetailPage({ params }) {
               </Reveal>
 
               {/* Bundled documents */}
-              {cert.isBundle && <CertificateDocuments items={cert.items} />}
+              <CertificateDocuments />
 
               {/* Skills */}
               <Reveal delay={0.16} className="mt-9">
@@ -277,6 +280,7 @@ export default async function CertificateDetailPage({ params }) {
               )}
             </div>
           </div>
+          </BundleProvider>
 
           {/* --------------------- Prev / next navigation -------------------- */}
           <Reveal className="mt-20 grid gap-4 border-t border-line pt-8 sm:grid-cols-2">
