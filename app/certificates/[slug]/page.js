@@ -21,21 +21,22 @@ import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion";
 import {
   certificateNeighbours,
   certificateStatus,
-  certificates,
   formatMonthYear,
-  getCertificate,
-} from "@/lib/certificates";
+} from "@/lib/certificate-utils";
+import { domainsForCertificate, getCertificateBySlug, listCertificates } from "@/lib/db";
 import { domains } from "@/lib/data";
 
-export const dynamicParams = false;
+// Certificates added through the admin panel after a build must still render,
+// so unknown slugs are rendered on demand rather than 404'd.
+export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return certificates.map((c) => ({ slug: c.slug }));
+  return listCertificates().map((c) => ({ slug: c.slug }));
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const cert = getCertificate(slug);
+  const cert = getCertificateBySlug(slug);
   if (!cert) return {};
   return { title: cert.shortName, description: cert.summary };
 }
@@ -51,13 +52,14 @@ function validityProgress(cert) {
 
 export default async function CertificateDetailPage({ params }) {
   const { slug } = await params;
-  const cert = getCertificate(slug);
-  if (!cert) notFound();
+  const cert = getCertificateBySlug(slug);
+  if (!cert || !cert.published) notFound();
 
-  const { prev, next } = certificateNeighbours(slug);
+  const { prev, next } = certificateNeighbours(listCertificates(), slug);
   const status = certificateStatus(cert);
   const progress = validityProgress(cert);
-  const featuredIn = domains.filter((d) => d.certificateSlugs?.includes(slug));
+  const featuredSlugs = domainsForCertificate(cert.id);
+  const featuredIn = domains.filter((d) => featuredSlugs.includes(d.slug));
   const hasVerifyLink = cert.verifyUrl && cert.verifyUrl !== "#";
 
   return (

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { certificateStatus } from "@/lib/certificates";
+import { certificateStatus } from "@/lib/certificate-utils";
 
 /**
  * The artwork inside a frame. If a real scan exists at `cert.image` it is

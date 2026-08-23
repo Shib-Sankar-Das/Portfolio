@@ -3,12 +3,12 @@ import Footer from "@/components/footer";
 import { Contact } from "@/components/sections";
 import CertificateWall from "@/components/certificate-wall";
 import CertificatesHeader from "@/components/certificates-header";
+import { listCertificates } from "@/lib/db";
 import {
   certificateOrgs,
   certificateSkills,
   certificateStatus,
-  certificatesByDate,
-} from "@/lib/certificates";
+} from "@/lib/certificate-utils";
 
 export const metadata = {
   title: "Certificates",
@@ -17,9 +17,9 @@ export const metadata = {
 };
 
 export default function CertificatesPage() {
-  const certificates = certificatesByDate();
-  const orgs = certificateOrgs();
-  const skills = certificateSkills();
+  const certificates = listCertificates();
+  const orgs = certificateOrgs(certificates);
+  const skills = certificateSkills(certificates);
 
   const stats = [
     { value: certificates.length, label: "Certificates" },

@@ -53,6 +53,64 @@ Then define the accent palette in [app/globals.css](app/globals.css) next to
 want a new card icon — add it to `domainIcons` in
 [components/sections.jsx](components/sections.jsx).
 
+## Certificates come from the admin app
+
+Certificates are **not** edited in this project. They live in a shared SQLite
+database and are managed by the sibling **`portfolio_admin`** app, which owns
+all writes — this app only reads.
+
+```
+D:\Portfolio\
+├── db\portfolio.db     ← shared database
+├── portfolio_admin\    ← admin panel (localhost:3001) — creates/edits certificates
+└── protfolio\          ← this app    (localhost:3000) — reads and renders them
+```
+
+To add or edit a certificate, run the admin app (`npm run dev` in
+`../portfolio_admin`) and open <http://localhost:3001>.
+
+### Where the data lives
+
+| Data | Location |
+| --- | --- |
+| Certificate text, dates, skills, links | SQLite at `../db/portfolio.db` |
+| Certificate visuals (PDF/PNG/JPG) | Cloudinary — uploaded by the admin app |
+| Everything else (projects, skills, experience) | [lib/data.js](lib/data.js) |
+
+The database is created and seeded from [lib/seed-certificates.js](lib/seed-certificates.js)
+on first run, so a fresh checkout renders even before the admin app has been
+started. It lives outside both projects and is not tracked in git.
+
+### How admin edits reach this app
+
+After a save the admin app posts to `POST /api/revalidate`
+([app/api/revalidate/route.js](app/api/revalidate/route.js)) with a shared
+secret, and this app revalidates its cached pages. Certificate changes appear
+without a rebuild. If this app isn't running when a save happens, it simply
+picks up the new data the next time it renders.
+
+### Environment variables
+
+Copy `.env.example` to `.env.local`:
+
+```
+DATABASE_PATH=../db/portfolio.db   # the shared database
+REVALIDATE_SECRET=…                # must match portfolio_admin's value
+```
+
+Cloudinary credentials and the admin password belong to `portfolio_admin`, not
+here — this app never uploads anything.
+
+### Deployment note
+
+Certificate pages read a local SQLite file, so this app needs a **persistent
+filesystem** reachable by both projects: a VPS, or containers sharing a volume.
+It does *not* work as-is on serverless platforms with ephemeral disks (Vercel,
+Netlify Functions) — the database would reset on every deploy. To deploy there,
+swap [lib/db.js](lib/db.js) for a hosted database (Postgres, Turso/libSQL) in
+both projects; the query functions it exports are the only surface the rest of
+the app depends on.
+
 ## Performance
 
 Applied optimizations:

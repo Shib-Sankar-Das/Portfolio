@@ -10,7 +10,8 @@ import {
   Projects,
   Skills,
 } from "@/components/sections";
-import { allCertifications, combinedSkills, domains, profile } from "@/lib/data";
+import { combinedSkills, domains, profile } from "@/lib/data";
+import { listCertificates } from "@/lib/db";
 
 export default function Home() {
   const featuredProjects = domains.flatMap((d) => d.projects);
@@ -48,7 +49,7 @@ export default function Home() {
           projects={featuredProjects}
           description="A selection across all my domains — from agentic AI assistants to autonomous robots."
         />
-        <EducationCerts certifications={allCertifications()} />
+        <EducationCerts certifications={listCertificates()} />
         <Contact />
       </main>
       <Footer />

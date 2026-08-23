@@ -10,7 +10,8 @@ import {
   Projects,
   Skills,
 } from "@/components/sections";
-import { certificatesForDomain, domains, getDomain } from "@/lib/data";
+import { domains, getDomain } from "@/lib/data";
+import { listCertificatesForDomain } from "@/lib/db";
 
 export const dynamicParams = false;
 
@@ -54,7 +55,7 @@ export default async function DomainPage({ params }) {
           description={`Hands-on ${domain.shortTitle.toLowerCase()} work — built, measured and shipped.`}
         />
         <Experience />
-        <EducationCerts certifications={certificatesForDomain(slug)} />
+        <EducationCerts certifications={listCertificatesForDomain(slug)} />
         <DomainCards
           domains={otherDomains}
           eyebrow="More Profiles"
