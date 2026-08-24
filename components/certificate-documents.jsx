@@ -87,7 +87,7 @@ export default function CertificateDocuments() {
       </m.div>
 
       {/* All documents at a glance */}
-      <ol className="mt-5 space-y-2.5">
+      <ol className="mt-5 space-y-3.5">
         {items.map((item, i) => (
           <li key={item.id}>
             <button

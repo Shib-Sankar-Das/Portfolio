@@ -347,7 +347,8 @@ export function EducationCerts({ certifications }) {
         </div>
         <div>
           <SectionHeadingLeft eyebrow="Certifications" title="Credentials" />
-          <StaggerGroup className="space-y-4">
+          {/* Cards lift on hover, so keep them clear of one another. */}
+          <StaggerGroup className="space-y-5">
             {certifications.map((c) => (
               <StaggerItem key={c.slug ?? c.name}>
                 <Link

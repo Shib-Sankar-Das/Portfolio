@@ -313,7 +313,9 @@ export default function CertificateWall({ certificates, orgs, skills }) {
             initial="hidden"
             animate="show"
             variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
-            className="relative grid gap-x-7 gap-y-12 sm:grid-cols-2 xl:grid-cols-3"
+            // Generous gaps: a bundle's stacked frames fan up and to the right
+            // on hover, and must never reach into the neighbouring card.
+            className="relative grid gap-x-10 gap-y-16 sm:grid-cols-2 sm:gap-x-14 sm:gap-y-20 xl:grid-cols-3 xl:gap-x-16"
           >
             {visible.map((cert, i) => (
               <FramedCertificate key={cert.slug} cert={cert} index={i} />
