@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "framer-motion";
 import {
   ChevronLeft,
@@ -29,8 +30,11 @@ export default function DocumentViewer({ open, onClose, title, mediaSrc, pageCou
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const scrollRef = useRef(null);
   const dragRef = useRef(null);
+
+  useEffect(() => setMounted(true), []);
 
   // Reset whenever a different document is opened.
   useEffect(() => {
@@ -98,7 +102,13 @@ export default function DocumentViewer({ open, onClose, title, mediaSrc, pageCou
   const width = zoom > 2 ? 2600 : zoom > 1.2 ? 2000 : 1600;
   const src = `${mediaSrc.split("?")[0]}?p=${page}&w=${width}`;
 
-  return (
+  if (!mounted) return null;
+
+  // Rendered into <body>: the showcase frame sits inside transformed, sticky
+  // ancestors, and a transformed ancestor makes `position: fixed` resolve
+  // against that element instead of the viewport — which left the overlay
+  // trapped inside the left column.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <m.div
@@ -234,6 +244,7 @@ export default function DocumentViewer({ open, onClose, title, mediaSrc, pageCou
           </p>
         </m.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

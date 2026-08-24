@@ -37,6 +37,12 @@ export default function CertificateShowcase({ cert }) {
   const viewerPages = (isBundle ? activeItem?.pageCount : cert.pageCount) ?? 1;
   const canView = Boolean(viewerSrc);
 
+  // Follow the document's own shape so a portrait letter is shown whole rather
+  // than cropped into a landscape window. Falls back to 4:3 when the size is
+  // unknown (e.g. a certificate rendered from text alone).
+  const ratio = (isBundle ? activeItem?.aspectRatio : cert.aspectRatio) ?? null;
+  const frameAspect = ratio ? `${ratio}` : "4 / 3";
+
   function handleMove(e) {
     const node = ref.current;
     if (!node) return;
@@ -67,22 +73,24 @@ export default function CertificateShowcase({ cert }) {
         >
           <div className="cert-mat">
             <div
-              className="cert-glass relative aspect-[4/3] overflow-hidden"
-              style={{ containerType: "inline-size" }}
+              className="cert-glass relative overflow-hidden"
+              style={{ containerType: "inline-size", aspectRatio: frameAspect }}
             >
-              <CertificateArtwork cert={displayed} priority />
+              <CertificateArtwork cert={displayed} priority fit="contain" />
             </div>
           </div>
 
+          {/* Touch only: on desktop the reader uses "Open viewer" beside the
+              document list, so the frame stays clean and unobstructed. */}
           {canView && (
             <button
               type="button"
               onClick={() => setViewerOpen(true)}
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-black/45 opacity-0 transition-opacity focus:opacity-100 focus:outline-none group-hover:opacity-100"
+              className="absolute inset-0 z-10 flex items-end justify-center rounded-md pb-4 focus:outline-none md:hidden"
               aria-label={`Open ${viewerTitle} in the document viewer`}
             >
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/95 px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-lg">
-                <Expand size={15} /> View document
+              <span className="inline-flex items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur">
+                <Expand size={13} /> Tap to view
               </span>
             </button>
           )}

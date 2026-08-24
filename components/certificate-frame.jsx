@@ -7,15 +7,17 @@ import { certificateStatus } from "@/lib/certificate-utils";
  * looks complete before any scans are uploaded. Sizing uses container query
  * units (cqw) so one design scales from thumbnail to full-page showcase.
  */
-export function CertificateArtwork({ cert, priority = false }) {
+export function CertificateArtwork({ cert, priority = false, fit = "contain" }) {
   if (cert.image) {
     return (
+      // `contain` keeps portrait letters and landscape certificates whole;
+      // `cover` is only for uniform thumbnails where cropping is acceptable.
       <Image
         src={cert.image}
         alt={`${cert.name} certificate`}
         fill
         sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-        className="object-cover"
+        className={fit === "cover" ? "object-cover" : "object-contain"}
         priority={priority}
       />
     );
