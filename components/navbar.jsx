@@ -12,6 +12,7 @@ const links = [
   { href: "/", label: "Home" },
   ...domains.map((d) => ({ href: `/${d.slug}`, label: d.shortTitle })),
   { href: "/certificates", label: "Certificates" },
+  { href: "/library", label: "Library" },
 ];
 
 export default function Navbar() {
