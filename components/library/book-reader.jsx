@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { m } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -27,6 +27,7 @@ const TURN_MS = 750;
 export default function BookReader({ book, onClose }) {
   const [mounted, setMounted] = useState(false);
   const [turned, setTurned] = useState(0);
+  const bookRef = useRef(null);
   useEffect(() => setMounted(true), []);
 
   const pages = book.pages ?? [];
@@ -76,13 +77,79 @@ export default function BookReader({ book, onClose }) {
   const atFront = turned === 0;
   const atBack = turned === total;
 
-  // The page-block edge only belongs on a book that has finished shutting.
-  const blockFront = atFront && settled === 0;
-  const blockBack = atBack && settled === total;
   const isOpen = showLeftPage && showRightPage;
 
   const forward = useCallback(() => setTurned((t) => Math.min(t + 1, total)), [total]);
   const back = useCallback(() => setTurned((t) => Math.max(t - 1, 0)), []);
+
+  /**
+   * Fit the type to the book — narrow screens only.
+   *
+   * Every page and both covers are in the DOM at once, so the fullest of each
+   * can be measured and a single size chosen that makes them all fit. One size
+   * per role keeps pages consistent with pages and covers with covers, rather
+   * than each one picking its own scale. Desktop keeps the stylesheet defaults.
+   */
+  useLayoutEffect(() => {
+    const root = bookRef.current;
+    if (!root || !mounted) return;
+
+    /** Shrinks `variable` until every `measure`d element fits. */
+    function shrinkToFit(variable, base, min, measure) {
+      let size = base;
+      for (let pass = 0; pass < 16; pass++) {
+        root.style.setProperty(variable, `${size}px`);
+        // Reading layout here forces the reflow needed before comparing.
+        const worst = measure();
+        if (worst <= 1.001 || size <= min) break;
+        size = Math.max(min, size * 0.94);
+      }
+    }
+
+    function fit() {
+      const narrow = window.matchMedia("(max-width: 639px)").matches;
+      if (!narrow) {
+        root.style.removeProperty("--page-font");
+        root.style.removeProperty("--cover-font");
+        return;
+      }
+
+      // Page bodies scroll, so compare content against their own viewport.
+      shrinkToFit("--page-font", 14, 9, () => {
+        let worst = 1;
+        for (const body of root.querySelectorAll("[data-page-body]")) {
+          if (body.clientHeight > 0) {
+            worst = Math.max(worst, body.scrollHeight / body.clientHeight);
+          }
+        }
+        return worst;
+      });
+
+      // Covers are centred and must fit outright, so compare the content block
+      // against the space left inside its padded parent.
+      shrinkToFit("--cover-font", 24, 11, () => {
+        let worst = 1;
+        for (const body of root.querySelectorAll("[data-cover-body]")) {
+          const parent = body.parentElement;
+          const style = getComputedStyle(parent);
+          const available =
+            parent.clientHeight -
+            parseFloat(style.paddingTop) -
+            parseFloat(style.paddingBottom);
+          if (available > 0) worst = Math.max(worst, body.scrollHeight / available);
+        }
+        return worst;
+      });
+    }
+
+    fit();
+    window.addEventListener("resize", fit);
+    window.addEventListener("orientationchange", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.removeEventListener("orientationchange", fit);
+    };
+  }, [mounted, book.id]);
 
   useEffect(() => {
     function onKey(e) {
@@ -107,7 +174,7 @@ export default function BookReader({ book, onClose }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={book.title}
@@ -135,14 +202,11 @@ export default function BookReader({ book, onClose }) {
         <m.div
           animate={{ x: atFront ? "-25%" : atBack ? "25%" : "0%" }}
           transition={{ duration: TURN_MS / 1000, ease: [0.36, 0.06, 0.2, 1] }}
-          className="relative mx-auto aspect-[3/2] w-full max-w-3xl"
+          ref={bookRef}
+          // Real open-book proportions at every size; the type is what adapts.
+          className="book-frame relative mx-auto aspect-[3/2] w-full max-w-3xl"
           style={{ transformStyle: "preserve-3d" }}
         >
-          {/* Page block behind whichever cover is shut — gives the closed book
-              visible thickness instead of looking like a flat card. */}
-          {blockFront && <PageBlock side="right" />}
-          {blockBack && <PageBlock side="left" />}
-
           {/* Half-pages exist only while leaves are stacked on that side. */}
           {showLeftPage && (
             <div className="book-page book-page-left absolute inset-y-0 left-0 w-1/2 rounded-l-md" />
@@ -262,36 +326,27 @@ export default function BookReader({ book, onClose }) {
   );
 }
 
-/** The stacked paper edge of a shut book. */
-function PageBlock({ side }) {
-  const right = side === "right";
-  return (
-    <div
-      className="pointer-events-none absolute inset-y-1 w-1/2"
-      style={{
-        [right ? "right" : "left"]: 0,
-        transform: `translateX(${right ? "-6px" : "6px"})`,
-        borderRadius: right ? "4px 2px 2px 4px" : "2px 4px 4px 2px",
-        background: "repeating-linear-gradient(180deg, #efe7d6 0 2px, #d9cfba 2px 4px)",
-        boxShadow: "0 10px 26px -10px rgba(0,0,0,0.7)",
-      }}
-      aria-hidden
-    />
-  );
-}
-
 function Cover({ book }) {
   return (
     <div
-      className="flex h-full w-full flex-col items-center justify-center gap-3 rounded-r-md px-8 text-center"
+      className="flex h-full w-full items-center justify-center overflow-hidden rounded-r-md px-6 py-6 sm:px-8"
       style={{ background: `linear-gradient(150deg, ${book.spine}, ${book.spine}dd 60%, #1c1917)` }}
     >
-      <p className="text-[10px] uppercase tracking-[0.3em] text-white/60">{book.section}</p>
-      <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">{book.title}</h2>
-      <div className="h-px w-16 bg-white/40" />
-      <p className="text-sm text-white/80">{book.author}</p>
-      <p className="text-xs text-white/50">{book.year}</p>
-      <p className="mt-4 text-[10px] uppercase tracking-[0.2em] text-white/40">Click to open</p>
+      {/* Measured by the auto-fit pass: gaps are in em so they shrink with the
+          type instead of squeezing a long title into a sliver. */}
+      <div
+        data-cover-body
+        className="flex w-full flex-col items-center gap-[0.42em] text-center"
+      >
+        <p className="cover-meta uppercase tracking-[0.3em] text-white/60">{book.section}</p>
+        <h2 className="cover-title font-bold leading-tight text-white">{book.title}</h2>
+        <div className="my-[0.2em] h-px w-[3em] bg-white/40" />
+        <p className="cover-author text-white/80">{book.author}</p>
+        <p className="cover-year text-white/50">{book.year}</p>
+        <p className="cover-meta mt-[0.8em] uppercase tracking-[0.2em] text-white/40">
+          Click to open
+        </p>
+      </div>
     </div>
   );
 }
@@ -299,16 +354,21 @@ function Cover({ book }) {
 function BackCover({ book }) {
   return (
     <div
-      className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-l-md px-8 text-center"
+      className="flex h-full w-full items-center justify-center overflow-hidden rounded-l-md px-6 py-6 sm:px-8"
       style={{ background: `linear-gradient(210deg, ${book.spine}, ${book.spine}dd 60%, #1c1917)` }}
     >
-      <div className="h-px w-16 bg-white/30" />
-      <p className="text-sm font-semibold text-white/85">{book.title}</p>
-      <p className="text-xs text-white/60">{book.author}</p>
-      <div className="h-px w-16 bg-white/30" />
-      <p className="mt-3 text-[10px] uppercase tracking-[0.2em] text-white/40">
-        Click to reopen
-      </p>
+      <div
+        data-cover-body
+        className="flex w-full flex-col items-center gap-[0.5em] text-center"
+      >
+        <div className="h-px w-[3em] bg-white/30" />
+        <p className="cover-author font-semibold text-white/85">{book.title}</p>
+        <p className="cover-year text-white/60">{book.author}</p>
+        <div className="h-px w-[3em] bg-white/30" />
+        <p className="cover-meta mt-[0.6em] uppercase tracking-[0.2em] text-white/40">
+          Click to reopen
+        </p>
+      </div>
     </div>
   );
 }
@@ -323,26 +383,33 @@ function Finis() {
 
 function Page({ page, number }) {
   return (
-    <div className="flex h-full w-full flex-col px-7 py-8 sm:px-10 sm:py-10">
-      <h3 className="mb-3 font-serif text-lg font-bold text-stone-900 sm:text-xl">
+    // Type scales with the viewport so a half-page barely 180px wide on a phone
+    // stays readable, and the body scrolls rather than being clipped — a scroll
+    // gesture doesn't fire a click, so it never turns the page by accident.
+    <div className="flex h-full w-full flex-col px-4 py-4 sm:px-10 sm:py-10">
+      <h3 className="page-heading mb-2 shrink-0 font-serif font-bold leading-snug text-stone-900">
         {page.heading}
       </h3>
-      <div className="flex-1 space-y-3 overflow-hidden">
+
+      {/* Measured by the auto-fit pass above; scrolling is only a safety net
+          for the rare page that still runs long at the minimum size. */}
+      <div
+        data-page-body
+        className="min-h-0 flex-1 space-y-[0.7em] overflow-y-auto overscroll-contain pr-1"
+      >
         {page.body.map((paragraph) => (
-          <p
-            key={paragraph}
-            className="font-serif text-[13px] leading-relaxed text-stone-700 sm:text-sm"
-          >
+          <p key={paragraph} className="page-body font-serif leading-relaxed text-stone-700">
             {paragraph}
           </p>
         ))}
         {page.quote && (
-          <blockquote className="mt-4 border-l-2 border-stone-400 pl-3 font-serif text-[13px] italic leading-relaxed text-stone-600">
+          <blockquote className="page-quote mt-[1em] border-l-2 border-stone-400 pl-2.5 font-serif italic leading-relaxed text-stone-600 sm:pl-3">
             “{page.quote}”
           </blockquote>
         )}
       </div>
-      <span className="mt-4 text-[10px] text-stone-400">{number}</span>
+
+      <span className="mt-2 shrink-0 text-[10px] text-stone-400">{number}</span>
     </div>
   );
 }
