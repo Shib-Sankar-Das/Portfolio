@@ -413,10 +413,31 @@ body {
 .book-frame {
   --page-font: 0.875rem;
   --cover-font: 1.5rem;
+
+  /* Shape of the open book. --book-open-ratio is one page's width ÷ height,
+     doubled: it comes from the real book's measurements or its cover scan, so
+     a tall novel and a wide art book are not forced into the same rectangle.
+     The frame takes whichever is smaller — the width available, or the width
+     that keeps it inside --book-max-h — so it never runs off the screen. */
+  --book-open-ratio: 1.36;
+  --book-max-h: 62vh;
+  aspect-ratio: var(--book-open-ratio);
+  width: min(100%, 48rem, var(--book-max-h) * var(--book-open-ratio));
+}
+@supports (height: 100svh) {
+  .book-frame {
+    --book-max-h: 62svh;
+  }
 }
 @media (min-width: 640px) {
   .book-frame {
     --cover-font: 1.875rem;
+    --book-max-h: 68vh;
+  }
+  @supports (height: 100svh) {
+    .book-frame {
+      --book-max-h: 68svh;
+    }
   }
 }
 

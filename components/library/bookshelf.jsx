@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import { Files } from "lucide-react";
+import { spineBackground, spineMetrics } from "@/lib/book-media";
 import BookReader from "./book-reader";
 import PaperReader from "./paper-reader";
 
@@ -110,36 +111,62 @@ export default function Bookshelf({ shelves }) {
   );
 }
 
-/** One book standing on the shelf, spine facing out. */
+/**
+ * One book standing on the shelf, spine facing out.
+ *
+ * A book measured in the admin gets its true proportions: spine thickness and
+ * height come from its real centimetres, so a slim paperback and a thick
+ * hardback genuinely differ. Its designed spine (solid or gradient, with the
+ * title rotated or stacked) is rendered here.
+ */
 function BookSpine({ book, section, onOpen }) {
-  // Thicker, taller books read as weightier reference volumes.
-  const width = book.thick ? 54 : 40;
-  const height = book.thick ? 240 : 216;
+  const design = book.spineDesign;
+  const measured = book.heightCm && book.spineCm;
+
+  const { width, height } = measured
+    ? spineMetrics({ heightCm: book.heightCm, spineCm: book.spineCm }, "sm")
+    : { width: book.thick ? 54 : 40, height: book.thick ? 240 : 216 };
+
+  const background = design
+    ? spineBackground(design)
+    : `linear-gradient(90deg, rgba(255,255,255,0.14) 0%, ${book.spine} 14%, ${book.spine} 68%, rgba(0,0,0,0.34) 100%)`;
+
+  const title = design?.title ?? null;
+  const text = title?.text || book.title;
+  const stacked = title?.mode === "stack";
 
   return (
     <button
       type="button"
       onClick={onOpen}
       className="book-spine flex flex-col items-center justify-between overflow-hidden py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      style={{
-        width,
-        height,
-        // Vertical shading only — an angled gradient made the spines read as
-        // if the books were leaning.
-        background: `linear-gradient(90deg, rgba(255,255,255,0.14) 0%, ${book.spine} 14%, ${book.spine} 68%, rgba(0,0,0,0.34) 100%)`,
-      }}
-      aria-label={`Open ${book.title} by ${book.author}`}
-      title={`${book.title} — ${book.author}`}
+      style={{ width, height, background }}
+      aria-label={`Open ${book.title}${book.author ? ` by ${book.author}` : ""}`}
+      title={`${book.title}${book.author ? ` — ${book.author}` : ""}`}
     >
       <span className="h-[3px] w-[62%] rounded-full bg-white/45" aria-hidden />
 
-      <span className="spine-title flex-1 py-2 text-[11px] font-semibold leading-tight tracking-wide text-white/95">
-        {book.title}
+      <span
+        className={stacked ? "flex-1 py-2 text-center leading-none" : "spine-title flex-1 py-2 leading-tight"}
+        style={{
+          color: title?.color ?? "rgba(255,255,255,0.95)",
+          fontSize: title?.size ?? 11,
+          fontWeight: 600,
+          letterSpacing: stacked ? 0 : "0.02em",
+          wordBreak: stacked ? "break-all" : undefined,
+          overflow: "hidden",
+          // A left-rotated spine reads bottom-to-top, the usual convention.
+          transform: !stacked && title?.rotation === 90 ? "rotate(180deg)" : undefined,
+        }}
+      >
+        {text}
       </span>
 
       <span className="flex flex-col items-center gap-1.5">
         <span className="h-[3px] w-[62%] rounded-full bg-white/45" aria-hidden />
-        <span className="text-[8px] uppercase tracking-wider text-white/60">{book.year}</span>
+        {book.year && (
+          <span className="text-[8px] uppercase tracking-wider text-white/60">{book.year}</span>
+        )}
       </span>
       <span className="sr-only">{section}</span>
     </button>

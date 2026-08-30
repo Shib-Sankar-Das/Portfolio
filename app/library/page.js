@@ -4,7 +4,7 @@ import Footer from "@/components/footer";
 import { Contact } from "@/components/sections";
 import { Reveal } from "@/components/motion";
 import Bookshelf from "@/components/library/bookshelf";
-import { libraryStats, shelves } from "@/lib/library";
+import { buildShelves, libraryStats } from "@/lib/library-db";
 
 export const metadata = {
   title: "Library",
@@ -13,10 +13,13 @@ export const metadata = {
 };
 
 export default function LibraryPage() {
+  // The shelf is built from the database the admin panel writes to.
+  const shelves = buildShelves();
+  const counts = libraryStats();
   const stats = [
-    { icon: BookOpen, value: libraryStats.books, label: "Books" },
-    { icon: FileText, value: libraryStats.papers, label: "Papers" },
-    { icon: Layers, value: libraryStats.sections, label: "Sections" },
+    { icon: BookOpen, value: counts.books, label: "Books" },
+    { icon: FileText, value: counts.papers, label: "Papers" },
+    { icon: Layers, value: counts.sections, label: "Sections" },
   ];
 
   return (

@@ -3,7 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { m } from "framer-motion";
-import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
+import {
+  BookMarked,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Link as LinkIcon,
+  X,
+} from "lucide-react";
 
 /**
  * A stapled bundle of research papers.
@@ -18,9 +25,25 @@ export default function PaperReader({ bundle, onClose }) {
   const [flipped, setFlipped] = useState(0);
   useEffect(() => setMounted(true), []);
 
-  // One title sheet, then one sheet per paper.
-  const sheets = [{ kind: "title" }, ...bundle.papers.map((paper) => ({ kind: "paper", paper }))];
+  // One title sheet, then a sheet per paper. A paper with an uploaded PDF
+  // contributes one sheet per rendered page, so flipping walks the real
+  // document; without one it falls back to a typeset summary sheet.
+  const sheets = [
+    { kind: "title" },
+    ...bundle.papers.flatMap((paper) =>
+      paper.hasScan && paper.pageCount > 0
+        ? Array.from({ length: paper.pageCount }, (_, i) => ({
+            kind: "scan",
+            paper,
+            pageNumber: i + 1,
+          }))
+        : [{ kind: "paper", paper }]
+    ),
+  ];
   const total = sheets.length;
+
+  // Which paper the reader is currently on — drives the link panel below.
+  const currentPaper = sheets[Math.min(flipped, total - 1)]?.paper ?? null;
 
   const forward = useCallback(() => setFlipped((f) => Math.min(f + 1, total - 1)), [total]);
   const back = useCallback(() => setFlipped((f) => Math.max(f - 1, 0)), []);
@@ -110,6 +133,8 @@ export default function PaperReader({ bundle, onClose }) {
               >
                 {sheet.kind === "title" ? (
                   <TitleSheet bundle={bundle} />
+                ) : sheet.kind === "scan" ? (
+                  <ScanSheet paper={sheet.paper} pageNumber={sheet.pageNumber} />
                 ) : (
                   <PaperSheet paper={sheet.paper} index={i} total={total - 1} />
                 )}
@@ -135,7 +160,10 @@ export default function PaperReader({ bundle, onClose }) {
         </div>
       </m.div>
 
-      <div className="relative z-20 mt-6 flex items-center gap-3">
+      {/* Links live on the backdrop beneath the paper, never over it. */}
+      <PaperLinks paper={currentPaper} />
+
+      <div className="relative z-20 mt-4 flex items-center gap-3">
         <button
           type="button"
           onClick={back}
@@ -145,8 +173,12 @@ export default function PaperReader({ bundle, onClose }) {
         >
           <ChevronLeft size={18} />
         </button>
-        <span className="min-w-[8rem] text-center text-xs font-medium text-white/70">
-          {flipped === 0 ? "Title sheet" : `Paper ${flipped} of ${total - 1}`}
+        <span className="min-w-[9rem] text-center text-xs font-medium text-white/70">
+          {flipped === 0
+            ? "Title sheet"
+            : sheets[flipped]?.kind === "scan"
+              ? `Page ${sheets[flipped].pageNumber} of ${sheets[flipped].paper.pageCount}`
+              : `Sheet ${flipped} of ${total - 1}`}
         </span>
         <button
           type="button"
@@ -163,6 +195,75 @@ export default function PaperReader({ bundle, onClose }) {
       </p>
     </m.div>,
     document.body
+  );
+}
+
+/**
+ * One rendered page of an uploaded PDF. Served through /api/library-media,
+ * which signs the private Cloudinary URL server-side — the file itself is
+ * never delivered, and an image loads far faster than a PDF viewer.
+ */
+function ScanSheet({ paper, pageNumber }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`/api/library-media/paper/${paper.id}?p=${pageNumber}&w=1400`}
+        alt={`${paper.title} — page ${pageNumber}`}
+        className="h-full w-full select-none object-contain"
+        loading={pageNumber <= 2 ? "eager" : "lazy"}
+        draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      <span className="absolute bottom-2 right-3 rounded bg-white/70 px-1.5 text-[10px] text-stone-500">
+        {pageNumber} / {paper.pageCount}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Where the current paper can be read. Sits on the blurred backdrop below the
+ * sheet so it never covers the paper itself.
+ */
+function PaperLinks({ paper }) {
+  const links = paper?.links ?? [];
+  if (!paper || links.length === 0) return null;
+
+  // The DOI is the canonical citation, so it leads.
+  const ordered = [...links].sort(
+    (a, b) => (a.kind === "doi" ? -1 : 0) - (b.kind === "doi" ? -1 : 0)
+  );
+
+  return (
+    <div className="relative z-20 mt-5 w-full max-w-2xl px-2">
+      <p className="mb-2 text-center text-[10px] uppercase tracking-[0.2em] text-white/40">
+        Read this paper
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {ordered.map((link) => {
+          const isDoi = link.kind === "doi";
+          return (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium transition-colors ${
+                isDoi
+                  ? "bg-white text-neutral-900 hover:bg-white/90"
+                  : "border border-white/25 text-white/85 hover:border-white/50 hover:text-white"
+              }`}
+            >
+              {isDoi ? <BookMarked size={12} /> : <LinkIcon size={12} />}
+              <span className="truncate">{link.label}</span>
+              <ExternalLink size={11} className="shrink-0 opacity-60" />
+            </a>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -218,20 +319,8 @@ function PaperSheet({ paper, index, total }) {
         </ul>
       </div>
 
-      <div className="mt-auto flex items-end justify-between pt-4">
-        {paper.link ? (
-          <a
-            href={paper.link}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sky-700 hover:underline"
-          >
-            Read the paper <ExternalLink size={11} />
-          </a>
-        ) : (
-          <span className="text-[11px] text-stone-400">No public link</span>
-        )}
+      {/* No links on the sheet itself — they sit on the backdrop below it. */}
+      <div className="mt-auto flex items-end justify-end pt-4">
         <span className="text-[10px] text-stone-400">
           {index} / {total}
         </span>

@@ -31,15 +31,25 @@ export default function BookReader({ book, onClose }) {
   useEffect(() => setMounted(true), []);
 
   const pages = book.pages ?? [];
+  // A scanned book carries page images; a written one carries text pages.
+  const isScanned = book.kind === "images";
+
+  // One page's width ÷ height, worked out server-side from the book's real
+  // measurements, its cover scan or its pages — whichever is known. The open
+  // spread is two of those side by side.
+  const pageAspect = book.pageAspect || 0.68;
+  const openRatio = Math.round(pageAspect * 2 * 1000) / 1000;
   const contentLeaves = Math.ceil(Math.max(pages.length - 1, 0) / 2);
 
+  const leaf = (page, n) => (page ? { page, n } : null);
+
   const leaves = [
-    { front: COVER, back: pages[0] ? { page: pages[0], n: 1 } : null },
+    { front: COVER, back: leaf(pages[0], 1) },
     ...Array.from({ length: contentLeaves }, (_, k) => {
       const i = k + 1;
       return {
-        front: pages[2 * i - 1] ? { page: pages[2 * i - 1], n: 2 * i } : null,
-        back: pages[2 * i] ? { page: pages[2 * i], n: 2 * i + 1 } : null,
+        front: leaf(pages[2 * i - 1], 2 * i),
+        back: leaf(pages[2 * i], 2 * i + 1),
       };
     }),
     { front: FINIS, back: BACK_COVER },
@@ -203,9 +213,9 @@ export default function BookReader({ book, onClose }) {
           animate={{ x: atFront ? "-25%" : atBack ? "25%" : "0%" }}
           transition={{ duration: TURN_MS / 1000, ease: [0.36, 0.06, 0.2, 1] }}
           ref={bookRef}
-          // Real open-book proportions at every size; the type is what adapts.
-          className="book-frame relative mx-auto aspect-[3/2] w-full max-w-3xl"
-          style={{ transformStyle: "preserve-3d" }}
+          // This book's own proportions — see --book-open-ratio in globals.css.
+          className="book-frame relative mx-auto"
+          style={{ transformStyle: "preserve-3d", "--book-open-ratio": openRatio }}
         >
           {/* Half-pages exist only while leaves are stacked on that side. */}
           {showLeftPage && (
@@ -250,7 +260,11 @@ export default function BookReader({ book, onClose }) {
                   ) : leaf.front === FINIS ? (
                     <Finis />
                   ) : leaf.front ? (
-                    <Page page={leaf.front.page} number={leaf.front.n} />
+                    isScanned ? (
+                      <ScanPage page={leaf.front.page} number={leaf.front.n} />
+                    ) : (
+                      <Page page={leaf.front.page} number={leaf.front.n} />
+                    )
                   ) : null}
                 </button>
 
@@ -265,7 +279,11 @@ export default function BookReader({ book, onClose }) {
                   {leaf.back === BACK_COVER ? (
                     <BackCover book={book} />
                   ) : leaf.back ? (
-                    <Page page={leaf.back.page} number={leaf.back.n} />
+                    isScanned ? (
+                      <ScanPage page={leaf.back.page} number={leaf.back.n} />
+                    ) : (
+                      <Page page={leaf.back.page} number={leaf.back.n} />
+                    )
                   ) : (
                     <Finis />
                   )}
@@ -326,7 +344,78 @@ export default function BookReader({ book, onClose }) {
   );
 }
 
+/**
+ * A scanned page. The image is cropped and tone-corrected server-side, so it
+ * arrives ready to display and simply fills its half of the spread.
+ */
+function ScanPage({ page, number }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#f7f1e3]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={page.src}
+        alt={page.label ? `${page.label}` : `Page ${number}`}
+        className="h-full w-full select-none object-contain"
+        loading={number <= 4 ? "eager" : "lazy"}
+        draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      <span className="absolute bottom-1.5 right-2 rounded bg-white/70 px-1 text-[9px] text-stone-500">
+        {number}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * A cover photograph in its half of the frame.
+ *
+ * The frame is already built to this book's proportions, so `contain` normally
+ * fills it edge to edge. When a cover is a slightly different shape from the
+ * book — a scan with a border, a measurement taken from the real object — the
+ * remainder is filled with a blurred enlargement of the cover itself rather
+ * than a flat band, so the sliver that is left reads as depth, not as a gap.
+ */
+function CoverImage({ src, alt, fit, side }) {
+  const round = side === "front" ? "rounded-r-md" : "rounded-l-md";
+  return (
+    <div className={`relative h-full w-full overflow-hidden bg-stone-900 ${round}`}>
+      {fit === "contain" && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-110 select-none object-cover blur-xl brightness-[0.55]"
+          draggable={false}
+        />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="relative h-full w-full select-none"
+        style={{ objectFit: fit }}
+        draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+    </div>
+  );
+}
+
 function Cover({ book }) {
+  // A scanned book shows its real cover photograph.
+  if (book.coverFront) {
+    return (
+      <CoverImage
+        src={book.coverFront}
+        alt={`${book.title} — front cover`}
+        fit={book.coverFit ?? "contain"}
+        side="front"
+      />
+    );
+  }
+
   return (
     <div
       className="flex h-full w-full items-center justify-center overflow-hidden rounded-r-md px-6 py-6 sm:px-8"
@@ -352,6 +441,17 @@ function Cover({ book }) {
 }
 
 function BackCover({ book }) {
+  if (book.coverBack) {
+    return (
+      <CoverImage
+        src={book.coverBack}
+        alt={`${book.title} — back cover`}
+        fit={book.coverFit ?? "contain"}
+        side="back"
+      />
+    );
+  }
+
   return (
     <div
       className="flex h-full w-full items-center justify-center overflow-hidden rounded-l-md px-6 py-6 sm:px-8"
