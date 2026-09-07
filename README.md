@@ -7,9 +7,9 @@ shows only its own domain. Alongside them sit two content systems fed by the
 admin app — a **certificate wall** and a **library** of books and research
 papers.
 
-> **Adding or editing content?** Certificates, books, papers and shelves are all
-> managed in the sibling **`portfolio_admin`** app. The full walkthrough is
-> **[../portfolio_admin/GUIDE.md](../portfolio_admin/GUIDE.md)**.
+> **Adding or editing content?** Certificates, books, papers, shelves and gallery
+> photographs are all managed in the sibling **`portfolio_admin`** app. The full
+> walkthrough is **[../portfolio_admin/GUIDE.md](../portfolio_admin/GUIDE.md)**.
 
 ## Routes
 
@@ -22,6 +22,7 @@ papers.
 | `/certificates` | The certificate wall — search, filter by organisation or skill, sort |
 | `/certificates/[slug]` | One credential: large view, description, skills, timeline, expiry, verification |
 | `/library` | The bookshelf — books that open and turn, and stapled bundles of research papers |
+| `/gallery` | A salon-hung wall of photographs; clicking one brings it forward, framed, with its label |
 
 Every specialised route is generated from one entry in the `domains` array, so
 adding a profile is a data change, not a code change.
@@ -42,6 +43,7 @@ npm run model    # convert assets/3d-source FBX → optimised GLB in public/mode
 | Profile, skills, projects, experience, education, domains | [lib/data.js](lib/data.js) |
 | Certificates (text, dates, skills, links) | Shared SQLite at `../db/portfolio.db` |
 | Library sections, books, pages, papers | The same database |
+| Gallery photographs and their labels | The same database; images on Cloudinary |
 | Certificate and library visuals | Cloudinary, served through this app's signing proxy |
 | Theme, accents, book typography | [app/globals.css](app/globals.css) |
 
@@ -169,6 +171,45 @@ contributions.
 
 ---
 
+## The gallery
+
+`/gallery` is a salon hang: a wall of photographs at different sizes, nudged off
+the line, the way pictures are actually hung rather than laid out in a grid.
+
+**Photographs are not edited here.** Like certificates and the library, they
+live in the shared database and are written only by `portfolio_admin`, which
+uploads the image to Cloudinary and records its title, country, place, event,
+date and story. This app reads and renders them.
+
+To add one: run the admin app and use **Gallery → Add photograph**. The
+walkthrough is in [../portfolio_admin/GUIDE.md](../portfolio_admin/GUIDE.md).
+
+**Every frame is cut to its own picture.** Each row carries the image's real
+pixel size, recorded on upload, and its crop if it has one — so the mount takes
+the photograph's shape and nothing is ever cropped or stretched to fit. Sizes
+vary by shape: a panorama is given the full width of its column, a tall portrait
+hangs a little smaller, a photograph can be marked to hang large whatever its
+shape, and the hang is offset column by column so the wall has a rhythm. The
+wall is ordered by the date taken, newest first.
+
+**Clicking a frame does not open a panel over the wall.** The wall itself falls
+back — scaling up, blurring and dimming — while the chosen print travels forward
+from exactly where it hung, using its measured rectangle as the starting
+transform. It ends framed and centred, sized to the space above a museum label
+carrying the country and place, the title, the event and date, and the story.
+Arrow keys walk the wall, Esc puts the picture back, and closing flies it home
+to its own frame.
+
+The print that travels is the file the wall already had in cache, with the
+full-resolution one focusing in over it — an empty mount for the length of the
+zoom would give the whole effect away.
+
+This is a deliberately different room from the certificate wall: slim modern
+frames and wide bone mounts on warm plaster, versus that page's heavy gilt
+mouldings, dark mats, glazing sheen and overhead picture light.
+
+---
+
 ## How documents are served
 
 Certificate and library documents live on Cloudinary under **authenticated
@@ -182,6 +223,7 @@ routes:
 | `/api/library-media/paper/[id]` | A rendered page of a research paper |
 | `/api/library-media/page/[id]` | A book page, with its crop and tone applied |
 | `/api/library-media/cover/[id]` | A book cover, with its crop and tone applied |
+| `/api/gallery-media/[id]` | A gallery photograph, with its crop and tone applied |
 
 Each route serves only content belonging to a **published** record on a published
 shelf. The browser never receives a Cloudinary URL and the source PDF is never
@@ -244,9 +286,12 @@ Applied:
   content (the no-JS equivalent of list virtualization for a page like this).
 - **Static generation** — the marketing routes are prerendered at build time; only
   the media proxies are dynamic.
-- **Media pipeline** — AVIF → WebP via `next/image`; book and certificate images
-  are resized, format-negotiated and quality-tuned by Cloudinary at delivery, and
-  fingerprinted URLs are cached immutably.
+- **Media pipeline** — AVIF → WebP via `next/image`; book, certificate and
+  gallery images are resized, format-negotiated and quality-tuned by Cloudinary
+  at delivery, and fingerprinted URLs are cached immutably. Gallery photographs
+  carry their pixel size in the database, so every frame reserves its exact space
+  and the wall never shifts as images arrive; each is offered a five-width
+  `srcset` so the browser fetches only what it will display.
 - **3D assets** — `npm run model` runs FBX sources through the glTF-Transform
   pipeline into optimised GLB in `public/models`.
 

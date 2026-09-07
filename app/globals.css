@@ -506,3 +506,189 @@ body {
   html { scroll-behavior: auto; }
   .animate-float-slow, .animate-scroll-hint { animation: none; }
 }
+
+/* ------------------------ Photo gallery: the salon wall ------------------
+   Deliberately a different room from the certificate wall. That one is a
+   museum of documents: heavy gilt mouldings, dark mats, glazing sheen and a
+   picture light overhead. This is a photographic exhibition — a slim modern
+   frame, a wide bone mount, no glass, and a warm wash on the plaster behind
+   each print. The hang is a salon hang: uneven on purpose.                */
+
+/* Gallery wall: warm plaster with a rail line and a soft vignette. */
+.gal-wall {
+  background-color: color-mix(in srgb, #c8b9a4 16%, var(--bg));
+  background-image:
+    radial-gradient(ellipse 120% 70% at 50% 0%, color-mix(in srgb, #fff 26%, transparent), transparent 62%),
+    radial-gradient(ellipse 90% 60% at 50% 108%, rgba(0, 0, 0, 0.16), transparent 70%),
+    repeating-linear-gradient(174deg, rgba(0, 0, 0, 0.014) 0 3px, transparent 3px 8px),
+    repeating-linear-gradient(86deg, rgba(0, 0, 0, 0.012) 0 2px, transparent 2px 7px);
+}
+.dark .gal-wall {
+  background-color: color-mix(in srgb, #6b5a45 12%, var(--bg));
+  background-image:
+    radial-gradient(ellipse 120% 70% at 50% 0%, rgba(255, 246, 232, 0.07), transparent 62%),
+    radial-gradient(ellipse 90% 60% at 50% 108%, rgba(0, 0, 0, 0.4), transparent 70%),
+    repeating-linear-gradient(174deg, rgba(255, 255, 255, 0.012) 0 3px, transparent 3px 8px),
+    repeating-linear-gradient(86deg, rgba(255, 255, 255, 0.01) 0 2px, transparent 2px 7px);
+}
+
+/* The picture rail the whole hang sits under. */
+.gal-rail {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--fg) 26%, transparent) 0%,
+    color-mix(in srgb, var(--fg) 10%, transparent) 42%,
+    transparent 100%);
+  box-shadow: 0 2px 5px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* Salon hang: a balanced multi-column flow, so frames keep their own height
+   and the wall has no dead grid rows. */
+.gal-columns {
+  column-count: 1;
+  column-gap: clamp(1.1rem, 3.4vw, 2.6rem);
+}
+@media (min-width: 560px) {
+  .gal-columns { column-count: 2; }
+}
+@media (min-width: 1024px) {
+  .gal-columns { column-count: 3; }
+}
+@media (min-width: 1440px) {
+  .gal-columns { column-count: 4; }
+}
+.gal-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin-bottom: clamp(1.4rem, 4vw, 3.2rem);
+}
+
+/* The frame itself: slim, flat, modern. No moulding, no gilt. */
+.gal-frame {
+  background: linear-gradient(158deg, #3b3630 0%, #22201d 40%, #33302b 72%, #1a1917 100%);
+  padding: clamp(4px, 0.7vw, 8px);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 16px 26px -14px rgba(0, 0, 0, 0.5),
+    0 34px 60px -34px rgba(0, 0, 0, 0.6);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s ease;
+}
+.dark .gal-frame {
+  background: linear-gradient(158deg, #cbc3b6 0%, #8e8578 38%, #b8afa1 70%, #6f675c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 18px 30px -14px rgba(0, 0, 0, 0.8),
+    0 40px 70px -34px rgba(0, 0, 0, 0.9);
+}
+
+/* Wide bone mount with a cut bevel — the print sits well inside it, and it
+   stays light in both themes so photographs read the same either way. */
+.gal-mount {
+  background: linear-gradient(168deg, #fdfbf6 0%, #f4efe4 55%, #ebe4d6 100%);
+  padding: clamp(0.75rem, 2.6vw, 1.6rem);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.dark .gal-mount {
+  background: linear-gradient(168deg, #ece6da 0%, #ded7c8 55%, #cdc5b4 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Bevelled window: the cut edge of the mount board around the print. */
+.gal-window {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 0 0 4px rgba(255, 255, 255, 0.85),
+    0 1px 3px 4px rgba(0, 0, 0, 0.09);
+}
+.dark .gal-window {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 0 0 4px rgba(255, 255, 255, 0.55),
+    0 1px 3px 4px rgba(0, 0, 0, 0.16);
+}
+
+/* Warm wash on the plaster behind a frame — a wall light, not a picture
+   light, so it grows outward from behind rather than raking down the front. */
+.gal-glow {
+  background: radial-gradient(ellipse 92% 78% at 50% 52%,
+    color-mix(in srgb, var(--accent) 34%, transparent) 0%,
+    transparent 72%);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gal-hang:hover .gal-glow,
+.gal-hang:focus-visible .gal-glow {
+  opacity: 0.55;
+  transform: scale(1.12);
+}
+.gal-hang:hover .gal-frame {
+  transform: translateY(-8px) scale(1.012);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 26px 40px -18px rgba(0, 0, 0, 0.55),
+    0 54px 90px -40px rgba(0, 0, 0, 0.65);
+}
+
+/* Caption strip that rises over the bottom of the mount on hover. */
+.gal-caption {
+  background: linear-gradient(0deg, rgba(14, 12, 10, 0.92) 12%, rgba(14, 12, 10, 0.72) 62%, transparent 100%);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.gal-hang:hover .gal-caption,
+.gal-hang:focus-visible .gal-caption {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The wall falls back while a photograph is open.
+   Only transform and opacity are animated — both are compositor-only, so the
+   whole hang moves without a single repaint. The blur comes from the viewer's
+   own backdrop-filter instead: animating `filter: blur()` here would mean
+   re-rasterising every frame on the wall on every frame of the animation,
+   which is precisely what makes a zoom stutter. */
+.gal-recede {
+  transition:
+    transform 0.66s cubic-bezier(0.22, 0.72, 0.16, 1),
+    opacity 0.5s ease-out;
+  transform-origin: center 40%;
+}
+.gal-recede-active {
+  transform: scale(1.06);
+  opacity: 0.55;
+  will-change: transform, opacity;
+}
+
+/* Museum label under the opened photograph. */
+.gal-plate {
+  background: linear-gradient(168deg, #fdfbf6 0%, #f2ece0 100%);
+  color: #1c1917;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 10px 26px -12px rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gal-frame,
+  .gal-glow,
+  .gal-caption,
+  .gal-recede {
+    transition: none;
+  }
+  .gal-hang:hover .gal-frame {
+    transform: none;
+  }
+  .gal-recede-active {
+    transform: none;
+    opacity: 0.4;
+  }
+}
