@@ -19,6 +19,8 @@ papers.
 | `/ai-data-science` | AI Engineering & Data Science |
 | `/robotics-embedded` | Robotics & Embedded Systems |
 | `/software-developer` | Software Development |
+| `/experience` | Every role as an ID badge hanging on a rail |
+| `/experience/[slug]` | The badge, pinned left, with that role's details beside it |
 | `/certificates` | The certificate wall — search, filter by organisation or skill, sort |
 | `/certificates/[slug]` | One credential: large view, description, skills, timeline, expiry, verification |
 | `/library` | The bookshelf — books that open and turn, and stapled bundles of research papers |
@@ -50,7 +52,14 @@ npm run model    # convert assets/3d-source FBX → optimised GLB in public/mode
 ### Editing `lib/data.js`
 
 - `profile` — name, contact details, social links, hero roles, summary.
-- `experience` / `education` — shared across every route.
+- `experience` — the timeline on every route *and* the `/experience` pages. Each
+  role needs a `slug`, `start`/`end` (`YYYY-MM`) and an `accent`; everything
+  else (`summary`, `focus`, `work`, `achievements`, `stack`, `links`,
+  `location`) is optional and its section hides when empty, so a role can carry
+  as much or as little as you have. Helpers next to it — `experienceByDate`,
+  `getExperience`, `experienceNeighbours`, `experienceDuration` — do the
+  ordering, lookup and "3 months" arithmetic.
+- `education` — shared across every route.
 - `domains` — one entry per specialised route.
 - `combinedSkills` — the merged skill grid on the home page.
 
@@ -78,6 +87,102 @@ Then define the accent palette in [app/globals.css](app/globals.css) next to
 `.theme-ai` / `.theme-robotics` (a light block and a `.dark` block), and add a
 card icon to `domainIcons` in [components/sections.jsx](components/sections.jsx)
 if you want a new one.
+
+---
+
+## Work experience
+
+The timeline section that appears on the home page and all three profile routes
+is the short version: role, company, period and a few bullets. Each card links
+through to that role's own page, and the section ends with an **Explore More**
+button to `/experience`.
+
+`/experience` hangs one **ID badge** per role from a rail: the profile
+photograph, and the name, role, employer and dates printed on a punched card
+([components/experience/id-card.jsx](components/experience/id-card.jsx)). Each
+badge sways gently, out of phase with its neighbours.
+
+The lanyard is a single SVG
+([lanyard.jsx](components/experience/lanyard.jsx)) rather than a few CSS boxes,
+because the parts have to *connect*. It is one unbroken run of metal: the fabric
+ribbons stop inside a crimp, the crimp hides the top of a swivel barrel, and the
+barrel carries a hook that drops down the card's face and curls into its slot.
+
+Three things make that read as hardware rather than as shapes:
+
+- **Each piece is painted over the one it joins**, so the ribbon ends, the
+  barrel's top and the hook's shoulder are all hidden inside their neighbour.
+- **The hook is drawn twice** — once normally, and once clipped to the slot and
+  dimmed. Above the slot it lies on the card; inside the slot it is seen through
+  the opening; below it nothing is drawn, because it has gone behind the card. A
+  second clip stops the metal dead at the slot's lower lip.
+- **One light for all of it.** The metal gradient is anchored in user space
+  rather than to each shape's own box; per-shape gradients made the thin hook
+  come out nearly white beside the crimp.
+
+The SVG is painted over the card's blank top strip, which is what lets the slot
+be cut into the card at all.
+
+`/experience/<slug>` is the same badge held to the left, with that role's details
+beside it: what was worked on as numbered pieces, achievements when there are
+any, the tools used, and links to the roles either side.
+
+The badge is **sticky inside its own column**, not fixed. That matters: a fixed
+badge has nothing to stop it and rides on over the contact section and the
+footer. Sticky releases it at the foot of the details, which is where it should
+stop. Two things are load-bearing for that — the column must not be
+`items-start`, or it never stretches and the sticky child has no room to travel;
+and nothing above it may set `overflow: hidden`, which switches sticky off
+entirely. The section is padded by exactly `PIN_TOP`, so at scroll 0 the flowed
+position and the stuck position are the same and nothing shifts on arrival.
+
+### The badge and the details arrive together
+
+Clicking a badge records where it was standing and hands straight over to that
+role's page, which carries the movement on. **Both halves run on one timeline**:
+the badge travels left from exactly where it was clicked while the details slide
+in from the right, at the same time.
+
+That is the whole reason for
+[transition-context.jsx](components/experience/transition-context.jsx) and
+[app/experience/layout.js](app/experience/layout.js). The origin is held in a
+ref in a layout that wraps *both* pages, so it survives the route change where
+component state on either page would not. Animating on the wall first and
+navigating afterwards — the obvious approach — puts the route change *between*
+the two halves, and they can never overlap.
+
+Reading the origin decides where the badge starts; an origin that is stale, for
+another role, or absent (a direct link, a reload, the back button) is ignored
+and the page simply renders in place.
+
+Measured over eight runs: the route swap lands at **+76ms**, then **21 frames
+where the badge and the details are both moving**, with a median of **1 dropped
+frame out of 73**.
+
+Three things were needed to get there, each found by measuring rather than by
+looking:
+
+- **The animation waits two frames** after the page mounts. Starting it in the
+  same breath as rendering and rasterising a whole new page competed with that
+  work. Waiting costs nothing visually — the badge is sitting exactly where it
+  was on the wall, so those frames read as the click landing.
+- **Both halves are single promoted layers.** Staggering the cards inside the
+  details meant several unpromoted subtrees animating within another animating
+  subtree; they now arrive with the column that carries them.
+- **The sway is held square** until the badge lands, so it matches the badge
+  just left behind on the wall.
+
+Both sides read [card-geometry.js](components/experience/card-geometry.js) for
+where the badge comes to rest, so the start of the movement lines up with where
+the badge actually was: measured offset **0–1px**.
+
+Below 1024px there is no room for a column beside a 288px badge, so the badge
+sits at the top with the details underneath and the click navigates plainly.
+The same applies under `prefers-reduced-motion`.
+
+Both pages are prerendered at build time from `experience` in
+[lib/data.js](lib/data.js) — `generateStaticParams` enumerates the slugs and
+`dynamicParams = false`, so only real roles resolve.
 
 ---
 

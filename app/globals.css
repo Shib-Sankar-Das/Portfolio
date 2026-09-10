@@ -507,6 +507,254 @@ body {
   .animate-float-slow, .animate-scroll-hint { animation: none; }
 }
 
+/* --------------------- Work experience: the ID badge ---------------------
+   A badge on a lanyard: two ribbons meeting at a metal clip, a punched card
+   below it, and a slow sway as though it were hanging off a hook. `--badge` is
+   the role's own colour, set per card.                                     */
+
+.idcard-hang {
+  --badge: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Swings from the clip, the way a real one does. */
+  transform-origin: 50% 6px;
+  animation: idcard-sway 7s ease-in-out infinite;
+  animation-delay: var(--sway-delay, 0s);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Starts and ends square. A badge that begins its sway from an angle would
+   snap into it, which matters here because the badge arriving on a detail page
+   has to line up exactly with the one that just flew across to it. */
+@keyframes idcard-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-1.15deg); }
+  75% { transform: rotate(1.15deg); }
+}
+
+/* Held square: the badge in flight, and the badge the moment it lands. */
+.idcard-hang.is-still {
+  animation: none;
+  transform: rotate(0deg);
+}
+
+/* Every badge on the wall freezes square the instant one is picked, so the
+   flight is measured from where a badge actually is rather than from a rect
+   inflated by the hover lift and whatever angle the sway had reached. */
+.is-taking-off .idcard-hang,
+.is-taking-off .idcard-pick:hover .idcard-hang {
+  animation: none;
+  transform: none;
+  transition: none;
+}
+
+/* Hovering steadies it and lifts it toward you. */
+.idcard-pick:hover .idcard-hang,
+.idcard-pick:focus-visible .idcard-hang {
+  animation-play-state: paused;
+  transform: rotate(0deg) translateY(-8px) scale(1.02);
+}
+
+/* ------------------------------- lanyard -------------------------------
+   Ribbons, crimp, ring and the slot are one SVG (components/experience/
+   lanyard.jsx) painted over the top of the card, so the ring can be drawn
+   passing through the slot instead of stopping at the card's edge. */
+
+.idcard-rig {
+  position: relative;
+}
+
+.idcard-lanyard {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  /* Above the card, which is what lets the slot be cut into it. */
+  z-index: 2;
+  overflow: visible;
+}
+
+/* The fabric itself takes the role's colour. */
+.idcard-ribbon-fill {
+  fill: var(--badge);
+}
+
+.idcard-stitch path {
+  stroke: #fff;
+  stroke-opacity: 0.24;
+  stroke-width: 0.7;
+  stroke-dasharray: 3 2.5;
+}
+
+/* The punched slot shows the page behind the card, in shadow. */
+.idcard-slot {
+  fill: var(--bg);
+}
+.idcard-slot-shade {
+  fill: #000;
+  /* A hole in a pale card needs more shadow to read as a recess than one in a
+     dark card, where the page behind it is already dark. */
+  fill-opacity: 0.46;
+}
+.dark .idcard-slot-shade {
+  fill-opacity: 0.35;
+}
+/* Dark immediately under the top lip: the thickness of the card, cut through. */
+.idcard-slot-cut {
+  stroke: #000;
+  stroke-opacity: 0.5;
+}
+/* The lower lip catches the light, which sets the ring behind it. */
+.idcard-slot-lip {
+  stroke: #fff;
+  stroke-opacity: 0.3;
+}
+.dark .idcard-slot-lip {
+  stroke-opacity: 0.16;
+}
+
+/* -------------------------------- the card ------------------------------ */
+
+.idcard-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  /* Blank strip at the top for the punched hole and the clip gripping it —
+     without it the clip covers the employer band. */
+  padding-top: 28px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.2),
+    0 18px 30px -16px rgba(2, 6, 23, 0.45),
+    0 40px 70px -40px rgba(2, 6, 23, 0.55);
+}
+.dark .idcard-body {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 18px 32px -16px rgba(0, 0, 0, 0.75),
+    0 44px 80px -44px rgba(0, 0, 0, 0.85);
+}
+
+/* The badge in flight gets one cheap shadow instead of three stacked
+   large-blur ones. Those have to be rasterised the moment the flying badge's
+   compositor layer is created, and that cost a 100ms stall on the first flight
+   of every page load — measured, not guessed. Mid-flight the difference is
+   invisible; the badge is moving. */
+.idcard-body.is-flying,
+.dark .idcard-body.is-flying {
+  box-shadow: 0 14px 30px -14px rgba(2, 6, 23, 0.6);
+}
+
+.idcard-band {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 1rem;
+  background: linear-gradient(120deg, var(--badge), color-mix(in srgb, var(--badge) 62%, #000));
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.idcard-photo {
+  position: relative;
+  height: 168px;
+  margin: 14px 14px 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 15%, color-mix(in srgb, var(--badge) 26%, transparent), transparent 70%),
+    var(--bg-soft);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.idcard-print {
+  flex: 1;
+  padding: 12px 16px 0;
+}
+.idcard-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.idcard-role {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--badge);
+}
+.idcard-rule {
+  margin: 10px 0;
+  height: 1px;
+  background: var(--line);
+}
+.idcard-meta {
+  display: grid;
+  gap: 7px;
+}
+.idcard-meta dt {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.idcard-meta dd {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.idcard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 16px 11px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-soft);
+}
+/* A printed barcode, drawn with a repeating gradient. */
+.idcard-barcode {
+  height: 20px;
+  flex: 1;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--fg) 0 1px, transparent 1px 3px,
+    var(--fg) 3px 5px, transparent 5px 6px,
+    var(--fg) 6px 7px, transparent 7px 10px
+  );
+  opacity: 0.55;
+}
+.idcard-type {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idcard-hang {
+    animation: none;
+    transition: none;
+  }
+  .idcard-pick:hover .idcard-hang {
+    transform: none;
+  }
+}
+
 /* ------------------------ Photo gallery: the salon wall ------------------
    Deliberately a different room from the certificate wall. That one is a
    museum of documents: heavy gilt mouldings, dark mats, glazing sheen and a

@@ -236,7 +236,11 @@ export function Experience() {
               <span className="absolute left-0 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-accent bg-bg sm:h-7 sm:w-7">
                 <Briefcase size={12} className="text-accent" />
               </span>
-              <div className="card-hover rounded-2xl border border-line bg-card p-6">
+              {/* The whole card is the way in to that role's full write-up. */}
+              <Link
+                href={`/experience/${job.slug}`}
+                className="card-hover group block rounded-2xl border border-line bg-card p-6"
+              >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="text-lg font-bold">{job.role}</h3>
                   <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent">
@@ -252,10 +256,28 @@ export function Experience() {
                     </li>
                   ))}
                 </ul>
-              </div>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
+                  Read the full write-up
+                  <ArrowRight
+                    size={13}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </span>
+              </Link>
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.15} className="mt-10 pl-10 sm:pl-12">
+          <Link
+            href="/experience"
+            className="group inline-flex items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+          >
+            <Briefcase size={15} className="text-accent" />
+            Explore More
+            <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+          </Link>
+        </Reveal>
       </div>
     </SectionShell>
   );
