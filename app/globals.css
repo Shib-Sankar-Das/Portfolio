@@ -507,6 +507,80 @@ body {
   .animate-float-slow, .animate-scroll-hint { animation: none; }
 }
 
+/* ------------------ Robotics: the arm-worked project carousel ------------ */
+
+.rc-card {
+  --rc-accent: var(--accent);
+  box-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.16),
+    0 16px 30px -18px rgba(2, 6, 23, 0.45);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+}
+.dark .rc-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 18px 34px -18px rgba(0, 0, 0, 0.75);
+}
+.group:hover .rc-card {
+  border-color: color-mix(in srgb, var(--rc-accent) 55%, var(--line));
+  box-shadow:
+    0 1px 2px rgba(2, 6, 23, 0.2),
+    0 26px 46px -20px color-mix(in srgb, var(--rc-accent) 40%, transparent);
+}
+
+/* A lit strip along the top edge, like a machine's status light. */
+.rc-card-edge {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--rc-accent) 30%,
+    var(--rc-accent) 70%,
+    transparent
+  );
+  opacity: 0.55;
+  transition: opacity 0.35s ease;
+}
+.group:hover .rc-card-edge {
+  opacity: 1;
+}
+
+.rc-arrow {
+  display: inline-flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease,
+    color 0.3s ease;
+}
+.rc-arrow:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.rc-arrow:disabled {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-card,
+  .rc-card-edge,
+  .rc-arrow {
+    transition: none;
+  }
+  .rc-arrow:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* --------------------- Work experience: the ID badge ---------------------
    A badge on a lanyard: two ribbons meeting at a metal clip, a punched card
    below it, and a slow sway as though it were hanging off a hook. `--badge` is

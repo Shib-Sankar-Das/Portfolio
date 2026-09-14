@@ -90,6 +90,149 @@ if you want a new one.
 
 ---
 
+## The robotic arm carousel
+
+On `/robotics-embedded` only, the projects section is a ring of cards worked by
+an industrial robot arm ([components/robotics/](components/robotics/)). Every
+other route keeps the plain project grid.
+
+**A circular queue.** The projects sit evenly spaced on a ring around the arm;
+the card after the last is the first again. The front card faces the viewer, the
+rest wait round the ring, and the ring turns to bring each one forward.
+
+- **Hover or focus an arrow:** the arm turns that way and opens its gripper,
+  ready.
+- **Press an arrow:** the arm turns to the next card on the ring, lowers onto it,
+  grips it and lifts it, then carries it round to the front while the rest of the
+  ring turns one place, sets it down and lets go.
+- **Click a card:** a side card is fetched to the front first; then the arm grips
+  the front card, lifts it off the ring and brings it toward the viewer, and the
+  write-up opens out of it. Closing the write-up has the arm put it back.
+
+**How it fits together.**
+
+- [project-carousel.jsx](components/robotics/project-carousel.jsx) owns the
+  scene, the clock and the choreography, and never imports three.js. Cards are
+  ordinary DOM buttons placed every frame by projecting their spot on the ring
+  (in the arm model's own metres) through a camera, with plain maths. The
+  choreography is written as "gripper here, this open" — heading, reach, height,
+  grip — and tweened.
+- [carousel-arm-engine.jsx](components/robotics/carousel-arm-engine.jsx) is the
+  3D half, loaded lazily on a transparent canvas. Each frame the carousel calls
+  `engine.render(timestamp, task)`; it solves the joint angles with
+  [industrial-arm-ik.js](components/robotics/industrial/industrial-arm-ik.js),
+  renders that pose synchronously (r3f `frameloop="never"` + `advance`), and
+  returns where the gripper tip actually is. A carried card is placed against
+  that exact frame, so card and gripper never drift apart. Pick-up and set-down
+  are short blends between ring slot and gripper.
+- **The IK is exact.** Turntable plus a two-link planar arm with the wrist kept
+  level, refined against the real forward kinematics: across 1,672 targets all
+  round the arm the gripper lands within 0.01 mm, pointing straight down.
+- **Depth is real.** Cards in front of the arm sit above the canvas, cards behind
+  it sit below, so the arm hides what it should. The canvas takes no pointer
+  events, so cards behind the arm are still clickable.
+
+The arm is decoration and is `aria-hidden`. The frame loop runs only while the
+section is on screen or mid-move. If WebGL or the model is unavailable, the
+ring still turns and every write-up still opens. Under `prefers-reduced-motion`,
+cards jump instead of travelling and write-ups open straight away.
+
+The section is not `cv-auto`: letting the browser skip laying out a live canvas
+and the cards positioned against it is asking for trouble. It has to survive
+StrictMode (dev mounts everything twice), so the "unmounted" ref is reset on
+mount — test changes on `npm run dev`, not only a production build.
+
+**Test route: `/arm-demo`.** The same carousel with five cards (the robotics
+projects topped up with clearly-marked placeholders) and a status panel showing
+WebGL support, whether the 3D arm has loaded, the reduced-motion setting, the
+current card, and a live log of every pose, pickup and release. It also has a
+switch to play the animation even when the system asks for reduced motion.
+It is not linked from the site and is marked `noindex`
+([app/arm-demo/page.js](app/arm-demo/page.js),
+[components/robotics/arm-demo.jsx](components/robotics/arm-demo.jsx)).
+
+### The rebuilt rig — `/arm-rig` (demo route)
+
+A second, rebuilt version of the arm lives on `/arm-rig`: a 360° orbit view,
+a slider for every joint, camera presets, joint markers, per-part visibility
+toggles, a looping demo, and a live integrity check ("All 10 joints
+connected"). It is not linked from the site and is marked `noindex`.
+
+**Why it exists.** The FBX route loses parts of this model: FBX2glTF drops both
+balancer rods (`w-pistonBob`) and leaves the base, body and pistons as loose
+objects at the scene root, so the arm comes apart the moment anything moves.
+The `.blend` holds the arm together with Blender constraints (Track To, IK,
+Child Of) that glTF cannot carry at all — and they don't survive base rotation
+even inside Blender.
+
+**How it is built.**
+
+1. Export straight from the `.blend` with Blender's own glTF exporter, which
+   keeps every object:
+   `blender -b Done_2nd-try.blend --python scripts/blender/export_arm_rig.py -- arm.glb`
+2. Optimise: `npm run model -- arm.glb robotic-arm-rig --simplify 0.35` →
+   `public/models/robotic-arm-rig.glb` (551 KB; every part within 0.03 units of
+   Blender's placement).
+3. The mechanism is rebuilt in code in
+   [arm-kinematics.js](components/robotics/rig/arm-kinematics.js). Five inputs
+   — base rotation, lower arm, upper arm, gripper rotation, claw opening — drive
+   everything else through the machine's two parallelograms (lower arm + rear
+   rod keep the elbow crank level; upper arm + top bar keep the head level) and
+   the balancer, whose cylinder and rod both aim along the line between their
+   anchors. Pivot points come from the bone heads and empties in the `.blend`.
+4. [arm-rig-viewer.jsx](components/robotics/rig/arm-rig-viewer.jsx) takes each
+   part out of the exported hierarchy and places it every frame as
+   *solved transform × rest placement*. The claw finger is baked into the
+   gripper mesh, so it is cut out on load into its own mesh and hinged. In the
+   `.blend` it is modelled closed; the old FBX export had it standing wide open.
+
+Across 10,935 poses covering every joint's full range, the largest gap at any
+joint is 0.15 units on a 170-unit arm. The head and crank never tilt.
+
+
+### The industrial robot arm — `/industrial-arm` (demo route)
+
+A second demo arm: a six-part industrial robot with a two-finger gripper
+(source in [assets/3d-source/industrial-robot-arm/](assets/3d-source/industrial-robot-arm/)).
+The route has a 360° orbit view, a slider for each joint (base, shoulder, elbow,
+wrist, gripper rotation, gripper closed), pose presets, a looping pick-and-place
+demo, camera presets, joint pivot markers, a live gripper-position readout, and
+per-part visibility toggles. It is not linked from the site and is marked
+`noindex`.
+
+**Unlike the palletiser, this model needed no mechanism rebuilt.** It is a clean
+chain of parented objects (base → turntable → lower arm → upper arm → wrist →
+gripper → fingers) with no bones or constraints, and its author put every
+object's origin on its joint. Rotating each part about its own origin in Blender
+confirmed every joint turns in place.
+
+**How it is built.**
+
+1. Export from the `.blend` with
+   [export_arm_rig.py](scripts/blender/export_arm_rig.py), then
+   `npm run model -- arm.glb industrial-robot-arm --max-texture 2048`. The model
+   ships with 4K colour, normal and roughness maps; `--max-texture` caps all of
+   them (the default only caps colour maps). The result is 3.6 MB, and every
+   part is within 0.04 mm of Blender's placement.
+2. [industrial-arm.js](components/robotics/industrial/industrial-arm.js) holds the
+   joints, presets and demo, and does forward kinematics down the chain. Pivots
+   are the object origins from the `.blend`, not the GLB's node origins:
+   optimising moves meshes onto new child nodes and shifted the finger nodes by
+   7.5 cm, so node origins are not reliable pivots.
+3. [industrial-arm-viewer.jsx](components/robotics/industrial/industrial-arm-viewer.jsx)
+   places every part as *solved transform × rest placement*, so a part can't come
+   away from its parent.
+
+Joint limits are chosen so no single joint drives the gripper into the floor or
+the base. The presets and every moment of the demo cycle were checked the same
+way; the demo's lowest point is 0.52 m up and 1.06 m out from the base. Reaching
+low means leaning the shoulder forward, not dropping the elbow: the lower arm
+rests leaning back, so the forearm's tilt is shoulder − elbow.
+
+---
+
+---
+
 ## Work experience
 
 The timeline section that appears on the home page and all three profile routes
@@ -398,7 +541,9 @@ Applied:
   and the wall never shifts as images arrive; each is offered a five-width
   `srcset` so the browser fetches only what it will display.
 - **3D assets** — `npm run model` runs FBX sources through the glTF-Transform
-  pipeline into optimised GLB in `public/models`.
+  pipeline into optimised GLB in `public/models`; `--simplify <ratio>` adds
+  error-bounded triangle collapse, which is worth it for hard-surface models
+  whose detail is far denser than the size they are drawn at.
 
 Not applied, deliberately:
 
