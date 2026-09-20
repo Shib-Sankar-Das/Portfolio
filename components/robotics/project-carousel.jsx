@@ -39,15 +39,20 @@ const IDLE = { heading: -38, r: 0.95, h: 1.45, grip: 44, roll: 0 };
 // narrowed, if need be, so every card still fits the stage (see fitRing).
 const LAYOUT = {
   large: {
-    camera: { position: [-0.05, 3.3, -8.4], target: [-0.05, 0.7, 0], fov: 32 },
-    card: 320,
-    stage: 780,
-    ring: { rx: 2.1, rz: 1.45 },
+    camera: { position: [-0.05, 3.5, -9.2], target: [-0.05, 0.48, 0], fov: 32 },
+    card: 360,
+    stage: 880,
+    // The arm never rises into the top of the stage — measured across every
+    // pose it reaches, at its highest, 178px down — so that band is cropped
+    // off, leaving ~25px of headroom and no gap under the section heading.
+    trim: 152,
+    ring: { rx: 2.2, rz: 1.5 },
   },
   small: {
-    camera: { position: [-0.05, 3.6, -12], target: [-0.05, 0.55, 0], fov: 32 },
-    card: 220,
-    stage: 660,
+    camera: { position: [-0.05, 3.7, -12.6], target: [-0.05, 0.42, 0], fov: 32 },
+    card: 210,
+    stage: 760,
+    trim: 182,
     ring: { rx: 1.45, rz: 1.3 },
   },
 };
@@ -115,7 +120,9 @@ function fitRing(L, n, w, h) {
     const halfCard = (L.card / 2) * (frontDepth / depth);
     rx = Math.min(rx, (w / 2 - 12 - halfCard) / (side * pxPerMetre));
   }
-  return { rx: Math.max(0.9, rx), rz: L.ring.rz };
+  // The floor is low enough for the narrowest phones, where the ring ends up
+  // deeper than it is wide and the side cards tuck in close behind the front one.
+  return { rx: Math.max(0.7, rx), rz: L.ring.rz };
 }
 
 const BLEND_MS = 240;
@@ -442,10 +449,14 @@ export default function ProjectCarousel({ projects, accent = "#fbbf24", forceMot
 
   return (
     <div>
+      {/* The stage keeps its full height — the camera, ring and card positions
+          are all fitted against it — and the empty band above the arm is
+          cropped by this box. */}
+      <div className="relative overflow-hidden" style={{ height: layout.stage - layout.trim }}>
       <div
         ref={stage}
-        className="relative isolate mx-auto w-full overflow-hidden"
-        style={{ height: layout.stage }}
+        className="relative isolate mx-auto w-full"
+        style={{ height: layout.stage, marginTop: -layout.trim }}
       >
         <div className="pointer-events-none absolute inset-0 z-10" aria-hidden>
           <ArmEngine camera={layout.camera} onEngine={onEngine} />
@@ -481,13 +492,18 @@ export default function ProjectCarousel({ projects, accent = "#fbbf24", forceMot
                   index={i}
                   count={count}
                   accent={accent}
-                  hint={offset === 0 && !busy}
-                  compact
+                  // No room for the hint line on a phone, where tapping the
+                  // front card is obvious enough.
+                  hint={offset === 0 && !busy && !small}
+                  // A phone has no room for every point at full length.
+                  points={small ? 2 : project.points.length}
+                  clamp={small ? 2 : 0}
                 />
               </button>
             </div>
           );
         })}
+      </div>
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-4">
