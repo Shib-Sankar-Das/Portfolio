@@ -90,6 +90,51 @@ if you want a new one.
 
 ---
 
+## The drone fleet (robotics skills)
+
+On `/robotics-embedded` only, the skills cards are flown in and held by a fleet
+of quadcopters ([drone-skills.jsx](components/robotics/drone-skills.jsx),
+[drone-fleet.jsx](components/robotics/drone-fleet.jsx)). Every other route keeps
+the plain skills grid.
+
+Each card gets its own drone. When the section arrives, the cards fly in from
+off-stage, staggered, and from then on each one hangs from its drone on two
+cables, swaying gently while the rotors turn.
+
+**The cards are ordinary page content.** They sit in the normal grid — that is
+what sets the section's height and keeps the text selectable — and are nudged by
+`transform` only. Each drone is then placed *above its own card* by converting
+the card's position on screen into the world position that lands there, so the
+layout can reflow freely and the fleet follows. Nothing depends on the 3D: under
+`prefers-reduced-motion`, or if WebGL or the model is unavailable, the cards
+simply sit in their grid.
+
+**The fleet is instanced.** A drone is 36 parts; eight of them would be ~290 draw
+calls a frame. On load the model is merged by material into a handful of
+geometries, baked into one normalised space (one unit across the rotors, centred
+on itself), and drawn as one `InstancedMesh` per material plus one per rotor —
+about a dozen draw calls for the whole fleet, however many drones there are. The
+rotors stay separate so they can spin, alternating direction per corner.
+
+**Both 3D sections render only while on screen.** The drones' frame loop stops
+when the skills section leaves the viewport, and the arm's does the same (it has
+no `rootMargin`), so the two canvases never draw at once.
+
+**The model.** Seven files came with the drone; `Drone_fb.FBX` was chosen. The
+`.max` needs 3ds Max, the `.IGS` is CAD data and the `.ABC` is a geometry cache;
+of the two usable FBX models it is half the weight of the DJI Phantom (631k
+triangles against 1.36M), keeps its materials (the Phantom has none and renders
+white), and names its rotors `GEO_Propeller_01`–`04`. Its own
+materials are not used: one is a translucent olive that made the whole aircraft
+look gold, so on load every part is repainted by role — a light grey shell, dark
+grey detail (camera, gimbal, wiring, mounts) and near-black rotors — which also
+reduces the fleet to two merged materials plus the rotors, and keeps the drones
+legible on both the dark and the light theme. Rebuild with
+`npm run model -- assets/3d-source/drone.fbx drone --simplify 0.03 --max-texture 1024`
+→ `public/models/drone.glb` (50k triangles, 405 KB).
+
+---
+
 ## The robotic arm carousel
 
 On `/robotics-embedded` only, the projects section is a ring of cards worked by

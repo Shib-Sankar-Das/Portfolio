@@ -203,7 +203,9 @@ export default function ProjectCarousel({ projects, accent = "#fbbf24", forceMot
       frameRef.current?.(performance.now());
     });
     ro.observe(el);
-    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "200px" });
+    // No margin: the arm is only drawn while its section is actually on screen,
+    // so it never competes with the drones over the skills section above it.
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting));
     io.observe(el);
     return () => {
       ro.disconnect();

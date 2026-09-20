@@ -11,6 +11,7 @@ import {
   Skills,
 } from "@/components/sections";
 import ArmProjects from "@/components/robotics/arm-projects";
+import DroneSkills from "@/components/robotics/drone-skills";
 import { domains, getDomain } from "@/lib/data";
 import { listCertificatesForDomain } from "@/lib/db";
 
@@ -50,7 +51,13 @@ export default async function DomainPage({ params }) {
           canvasColors={domain.heroColors}
           primaryCta={{ href: "#projects", label: "View Projects" }}
         />
-        <Skills groups={domain.skills} title={`${domain.shortTitle} Toolbox`} />
+        {/* On robotics a fleet of drones flies the skill cards in and holds
+            them; every other route shows the same content as a plain grid. */}
+        {slug === "robotics-embedded" ? (
+          <DroneSkills groups={domain.skills} title={`${domain.shortTitle} Toolbox`} />
+        ) : (
+          <Skills groups={domain.skills} title={`${domain.shortTitle} Toolbox`} />
+        )}
         {/* Robotics gets its projects on a carousel worked by a robotic arm;
             every other route shows the same content as a plain grid. */}
         {slug === "robotics-embedded" ? (
