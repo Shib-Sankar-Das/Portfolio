@@ -503,6 +503,29 @@ mouldings, dark mats, glazing sheen and overhead picture light.
 
 ---
 
+## The technology icon set
+
+The shared database also carries a `tech_icons` table: 452 images on Cloudinary —
+logos of languages, frameworks, databases, tools and protocols, plus photographs
+of the microcontroller boards the robotics work runs on — each with a written
+description at three lengths: one line, two or three lines, and an introduction
+followed by at least three points (`long_description`, JSON). Nothing on the site
+renders it yet; it is there for skill chips, stack lists and tool detail panels
+to draw on.
+
+Unlike certificates, papers and photographs, **these icons are public**: they are
+vendor logos rather than documents of mine, so they sit under ordinary Cloudinary
+delivery and `icon_url` can be used directly in an `<img>` or as a CSS
+background — no signing, no media proxy. Most carry transparency; five
+(`langchain`, `langgraph`, `nordic-nrf`, `rag`, `wifi`) are black line art and
+will need inverting in dark mode.
+
+The set is uploaded and written by `portfolio_admin` (`npm run icons:upload`,
+`npm run icons:seed`); this app only reads it. The schema is duplicated in
+[lib/db.js](lib/db.js), as with every other table.
+
+---
+
 ## How documents are served
 
 Certificate and library documents live on Cloudinary under **authenticated
