@@ -3,6 +3,7 @@ import Navbar from "@/components/navbar";
 import Hero from "@/components/hero";
 import Footer from "@/components/footer";
 import {
+  About,
   Contact,
   DomainCards,
   EducationCerts,
@@ -12,8 +13,9 @@ import {
 } from "@/components/sections";
 import ArmProjects from "@/components/robotics/arm-projects";
 import DroneSkills from "@/components/robotics/drone-skills";
-import { domains, getDomain } from "@/lib/data";
+import { domains, getDomain, profile } from "@/lib/data";
 import { listCertificatesForDomain } from "@/lib/db";
+import { iconsForSkillGroups } from "@/lib/tech-icons";
 
 export const dynamicParams = false;
 
@@ -51,10 +53,19 @@ export default async function DomainPage({ params }) {
           canvasColors={domain.heroColors}
           primaryCta={{ href: "#projects", label: "View Projects" }}
         />
+        {/* The same About as the home page — who I am does not change with the
+            route, and the hero above already carries this domain's own summary.
+            Untinted here, because the skills section below it is tinted. */}
+        <About summary={profile.summary} highlights={profile.aboutHighlights} soft={false} />
         {/* On robotics a fleet of drones flies the skill cards in and holds
             them; every other route shows the same content as a plain grid. */}
         {slug === "robotics-embedded" ? (
-          <DroneSkills groups={domain.skills} title={`${domain.shortTitle} Toolbox`} />
+          <DroneSkills
+            groups={domain.skills}
+            title={`${domain.shortTitle} Toolbox`}
+            // Icon and write-up per skill, from the set managed in the admin.
+            skillIcons={iconsForSkillGroups(domain.skills)}
+          />
         ) : (
           <Skills groups={domain.skills} title={`${domain.shortTitle} Toolbox`} />
         )}

@@ -29,6 +29,14 @@ papers.
 Every specialised route is generated from one entry in the `domains` array, so
 adding a profile is a data change, not a code change.
 
+**About is shared.** The same section — photograph, heading, summary and
+highlight chips — sits under the hero on the home page and on all three domain
+routes, from `profile.summary` and `profile.aboutHighlights` in
+[lib/data.js](lib/data.js). Who I am does not change with the route; the hero
+above it still carries that domain's own summary. Each route tints it with its
+own accent, and on a domain route it is untinted so it does not run into the
+skills section below it.
+
 ## Run it
 
 ```bash
@@ -108,6 +116,35 @@ the card's position on screen into the world position that lands there, so the
 layout can reflow freely and the fleet follows. Nothing depends on the 3D: under
 `prefers-reduced-motion`, or if WebGL or the model is unavailable, the cards
 simply sit in their grid.
+
+**The cards are handled.** Knock one — click anywhere on it that is not a skill —
+and it swings on its cables like a hanging signboard: a damped `rotateX` about
+its top edge, where the cables hold it, decaying over about two seconds.
+
+**Click a skill and the fleet carries that card forward.** The card lifts and
+grows, its drone flies toward the camera with it, and the rest of the deck falls
+back and dims. The skill opens beside the card with **its icon on the left and
+what it is on the right** — the one-line summary, the detailed description and
+its first three points, all read from the `tech_icons` table that
+`portfolio_admin` manages.
+
+The drone's move is one number: it is pushed toward the camera in world `z`, and
+its `x` and `y` are pulled in by the same ratio, which keeps it exactly above the
+card on screen while perspective alone makes it grow. Nothing is laid out twice.
+
+Opening a skill **moves no other card**: the panel is absolutely positioned, and
+whether it opens above or below, and to which edge it anchors, is measured
+against the deck when it opens so it always stays inside the section and on
+screen. Escape closes it, as does clicking the skill again, the ✕, or knocking
+another card.
+
+**Matching a skill to its icon** happens on the server in
+[lib/tech-icons.js](lib/tech-icons.js), which normalises the name written in
+`lib/data.js` and looks it up by icon name, then by label, then through a small
+alias table for the ones that need it — `ROS2 Humble` → `robot-operating-system`,
+`nRF24L01 (2.4GHz)` → `nordic-nrf`, `VS Code` → `visual-studio-code`. A skill
+with no row in the table still opens; it shows its name and a note instead of an
+icon, so adding the icon later is all it takes.
 
 **The fleet is instanced.** A drone is 36 parts; eight of them would be ~290 draw
 calls a frame. On load the model is merged by material into a handful of

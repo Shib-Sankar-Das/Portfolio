@@ -502,9 +502,33 @@ body {
   animation: scroll-hint 1.8s ease-in-out infinite;
 }
 
+/* Academic background beside credentials: two subgrid columns on one set of
+   rows, so each block lines up with the block at its side and stands the same
+   height. The row count comes from whichever column is longer. Below lg the
+   columns are plain stacks and none of this applies. */
+@media (min-width: 1024px) {
+  .paired-grid {
+    /* The heading row and the trailing link row take what they need; every
+       card row is 1fr, which in an auto-height grid makes them all as tall as
+       the tallest — so a two-line credential is not a shorter block than the
+       three-line degree beside it. */
+    grid-template-rows: auto repeat(var(--paired-cards, 3), 1fr) auto;
+  }
+}
+
+/* The skill a drone has just carried forward, unfolding from its card. It is
+   anchored by its own edge, so it grows out of the card rather than drifting. */
+@keyframes skill-open {
+  from { transform: var(--skill-shift, translate(0, 0)) scale(0.92); opacity: 0 }
+  to   { transform: var(--skill-shift, translate(0, 0)) scale(1); opacity: 1 }
+}
+.animate-skill-open {
+  animation: skill-open 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .animate-float-slow, .animate-scroll-hint { animation: none; }
+  .animate-float-slow, .animate-scroll-hint, .animate-skill-open { animation: none; }
 }
 
 /* ------------------ Robotics: the arm-worked project carousel ------------ */

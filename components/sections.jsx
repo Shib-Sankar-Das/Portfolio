@@ -48,9 +48,17 @@ function SectionShell({ id, children, soft = false }) {
 
 /* ------------------------------- About -------------------------------- */
 
-export function About({ summary, highlights }) {
+/**
+ * Who I am. The same section on the home page and on every domain route, so it
+ * is given the shared profile summary rather than the route's own.
+ *
+ * `soft` is the background: on the home page About follows the hero and is
+ * tinted, on a domain route the skills section right below it is tinted
+ * instead, so the two would otherwise run together.
+ */
+export function About({ summary, highlights, soft = true }) {
   return (
-    <SectionShell id="about" soft>
+    <SectionShell id="about" soft={soft}>
       <Parallax speed={30} className="glow-blob right-[-6%] top-0 h-64 w-64" />
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
         <Reveal>
@@ -78,9 +86,9 @@ export function About({ summary, highlights }) {
   );
 }
 
-function SectionHeadingLeft({ eyebrow, title }) {
+function SectionHeadingLeft({ eyebrow, title, className = "mb-6" }) {
   return (
-    <Reveal className="mb-6">
+    <Reveal className={className}>
       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">{eyebrow}</p>
       <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
     </Reveal>
@@ -342,70 +350,86 @@ export function Projects({ projects, description }) {
 
 /* ------------------------ Education & Certifications ------------------- */
 
+/**
+ * Academic background on the left, credentials on the right.
+ *
+ * The two columns are one grid rather than two stacks: each column is a
+ * subgrid of the same rows, so a degree and the credential beside it share a
+ * row — level with each other and the same height — however differently their
+ * text wraps. The column with fewer entries simply stops; the rows it leaves
+ * empty take no space.
+ */
 export function EducationCerts({ certifications }) {
+  // A row per pair. The headings take the track above them and the "Other
+  // Certificates" link the one below, both sized to their own content.
+  const cardRows = Math.max(education.length, certifications.length);
+  const column = "flex flex-col gap-5 lg:row-span-full lg:grid lg:grid-rows-subgrid";
+
   return (
     <SectionShell id="education">
-      <div className="grid gap-14 lg:grid-cols-2 lg:gap-10">
-        <div>
-          <SectionHeadingLeft eyebrow="Education" title="Academic Background" />
-          <StaggerGroup className="space-y-4">
-            {education.map((e) => (
-              <StaggerItem key={e.degree}>
-                <div className="card-hover flex items-start gap-4 rounded-2xl border border-line bg-card p-5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                    <GraduationCap size={20} />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="font-bold leading-snug">{e.degree}</h3>
-                    <p className="mt-0.5 text-sm text-muted">{e.school}</p>
-                    <p className="mt-1.5 text-xs text-muted">
-                      {e.period} · <span className="font-semibold text-accent">{e.score}</span>
-                    </p>
-                  </div>
+      <div
+        className="paired-grid grid gap-x-10 gap-y-5 lg:grid-cols-2"
+        style={{ "--paired-cards": cardRows }}
+      >
+        {/* The column is the stagger group itself: a wrapper around the cards
+            would either break the subgrid or, with `display: contents`, have no
+            box for the in-view trigger to measure. */}
+        <StaggerGroup className={column}>
+          <SectionHeadingLeft eyebrow="Education" title="Academic Background" className="" />
+          {education.map((e) => (
+            <StaggerItem key={e.degree} className="h-full">
+              <div className="card-hover flex h-full items-start gap-4 rounded-2xl border border-line bg-card p-5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                  <GraduationCap size={20} />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-bold leading-snug">{e.degree}</h3>
+                  <p className="mt-0.5 text-sm text-muted">{e.school}</p>
+                  <p className="mt-1.5 text-xs text-muted">
+                    {e.period} · <span className="font-semibold text-accent">{e.score}</span>
+                  </p>
                 </div>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        </div>
-        <div>
-          <SectionHeadingLeft eyebrow="Certifications" title="Credentials" />
-          {/* Cards lift on hover, so keep them clear of one another. */}
-          <StaggerGroup className="space-y-5">
-            {certifications.map((c) => (
-              <StaggerItem key={c.slug ?? c.name}>
-                <Link
-                  href={`/certificates/${c.slug}`}
-                  className="card-hover group flex items-start gap-4 rounded-2xl border border-line bg-card p-5"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
-                    <Award size={20} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-bold leading-snug">{c.name}</h3>
-                    <p className="mt-1.5 text-xs text-muted">
-                      {c.org} · {c.date}
-                    </p>
-                  </div>
-                  <ArrowRight
-                    size={15}
-                    className="mt-1 shrink-0 text-muted transition-all group-hover:translate-x-1 group-hover:text-accent"
-                  />
-                </Link>
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
+              </div>
+            </StaggerItem>
+          ))}
+        </StaggerGroup>
 
-          <Reveal delay={0.15}>
+        <StaggerGroup className={column}>
+          <SectionHeadingLeft eyebrow="Certifications" title="Credentials" className="" />
+          {certifications.map((c) => (
+            <StaggerItem key={c.slug ?? c.name} className="h-full">
+              <Link
+                href={`/certificates/${c.slug}`}
+                className="card-hover group flex h-full items-start gap-4 rounded-2xl border border-line bg-card p-5"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                  <Award size={20} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold leading-snug">{c.name}</h3>
+                  <p className="mt-1.5 text-xs text-muted">
+                    {c.org} · {c.date}
+                  </p>
+                </div>
+                <ArrowRight
+                  size={15}
+                  className="mt-1 shrink-0 text-muted transition-all group-hover:translate-x-1 group-hover:text-accent"
+                />
+              </Link>
+            </StaggerItem>
+          ))}
+
+          <Reveal delay={0.15} className="lg:self-start">
             <Link
               href="/certificates"
-              className="group mt-5 inline-flex items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
+              className="group inline-flex items-center gap-2 rounded-full border border-line bg-card px-5 py-2.5 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
             >
               <Award size={15} className="text-accent" />
               Other Certificates
               <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
             </Link>
           </Reveal>
-        </div>
+        </StaggerGroup>
       </div>
     </SectionShell>
   );

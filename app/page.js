@@ -31,17 +31,7 @@ export default function Home() {
           description={profile.summary}
           primaryCta={{ href: "#domains", label: "Explore My Domains" }}
         />
-        <About
-          summary={profile.summary}
-          highlights={[
-            "End-to-End ML Systems",
-            "Agentic AI & RAG",
-            "Computer Vision",
-            "ROS2 Robotics",
-            "Embedded Firmware",
-            "IoT Ecosystems",
-          ]}
-        />
+        <About summary={profile.summary} highlights={profile.aboutHighlights} />
         <DomainCards domains={domains} />
         <Skills groups={combinedSkills} title="The Full Stack of Intelligence" />
         <Experience />
